@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { eventPublicUrl } from "@/lib/utils";
 import { EventQrCard } from "./EventQrCard";
 import { DeleteEventButton } from "./DeleteEventButton";
+import { MobileUploader } from "./MobileUploader";
 
 export default async function EventDetailPage({
   params,
@@ -70,8 +71,10 @@ export default async function EventDetailPage({
         <EventQrCard url={publicUrl} slug={event.slug} />
       </div>
 
+      <MobileUploader eventId={event.id} />
+
       <div className="rounded-2xl border border-border bg-muted/30 p-5">
-        <h2 className="font-semibold">วิธีอัปโหลดรูป</h2>
+        <h2 className="font-semibold">อัปโหลดอัตโนมัติด้วย CLI (ช่างภาพ)</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           ใช้ <span className="font-mono">uploader CLI</span> ที่เครื่องของช่างภาพ
           ให้ watch โฟลเดอร์ที่กล้อง tether ลง:
