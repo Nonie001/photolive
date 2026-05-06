@@ -6,24 +6,21 @@ export const metadata = { title: "หน้าหลัก — PhotoLive" };
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  // Single round-trip: events + photo count via embedded relationship.
   const { data: events } = await supabase
     .from("events")
-    .select("id, name, slug, event_date, created_at")
+    .select("id, name, slug, event_date, created_at, photos(count)")
     .order("created_at", { ascending: false });
 
-  // Photo counts per event (single round-trip per event is fine for MVP).
-  const counts: Record<string, number> = {};
-  if (events) {
-    await Promise.all(
-      events.map(async (e) => {
-        const { count } = await supabase
-          .from("photos")
-          .select("id", { count: "exact", head: true })
-          .eq("event_id", e.id);
-        counts[e.id] = count ?? 0;
-      }),
-    );
-  }
+  type EventRow = {
+    id: string;
+    name: string;
+    slug: string;
+    event_date: string | null;
+    created_at: string;
+    photos: { count: number }[];
+  };
+  const list = (events as EventRow[] | null) ?? [];
 
   return (
     <div className="space-y-6">
@@ -51,11 +48,11 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {events.map((event) => (
+          {list.map((event) => (
             <li key={event.id}>
               <Link
                 href={`/dashboard/${event.id}`}
-                className="block rounded-2xl border border-border bg-muted/30 p-5 transition-colors hover:bg-muted/60"
+                className="block rounded-2xl border border-border bg-muted/30 p-5 transition-all hover:bg-muted/60 hover:border-foreground/20 hover:-translate-y-0.5"
               >
                 <h2 className="font-semibold">{event.name}</h2>
                 <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
@@ -67,7 +64,7 @@ export default async function DashboardPage() {
                   )}
                   <span className="inline-flex items-center gap-1">
                     <ImageIcon className="h-3.5 w-3.5" />
-                    {counts[event.id] ?? 0} รูป
+                    {event.photos?.[0]?.count ?? 0} รูป
                   </span>
                 </div>
                 <p className="mt-3 font-mono text-xs text-muted-foreground">
