@@ -323,18 +323,21 @@ function UseCase({ icon, label }: { icon: React.ReactNode; label: string }) {
 }
 
 /**
- * Decorative photo-grid mockup using gradient placeholders.
- * No external images required — gives the "live gallery" vibe.
+ * Phone mockup with real event photos from Unsplash (free, no auth required).
  */
 function PhotoGridMockup() {
-  // Gradients chosen to feel like wedding/event photography palettes.
-  const tiles = [
-    { gradient: "from-rose-300 via-pink-400 to-fuchsia-500", delay: "0ms" },
-    { gradient: "from-amber-200 via-orange-300 to-rose-400", delay: "120ms" },
-    { gradient: "from-sky-300 via-indigo-400 to-purple-500", delay: "240ms" },
-    { gradient: "from-emerald-300 via-teal-400 to-cyan-500", delay: "60ms" },
-    { gradient: "from-yellow-300 via-amber-400 to-orange-500", delay: "180ms" },
-    { gradient: "from-violet-400 via-fuchsia-500 to-pink-500", delay: "300ms" },
+  // Curated wedding / event photography from Unsplash.
+  // Using ?w=240&h=240&fit=crop for fast tiny thumbnails.
+  const photos = [
+    "https://images.unsplash.com/photo-1519741497674-611481863552?w=240&h=240&fit=crop", // wedding rings
+    "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=240&h=240&fit=crop", // bride bouquet
+    "https://images.unsplash.com/photo-1529636798458-92182e662485?w=240&h=240&fit=crop", // wedding couple
+    "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=240&h=240&fit=crop", // wedding party
+    "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=240&h=240&fit=crop", // cheers glasses
+    "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=240&h=240&fit=crop", // dance floor
+    "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=240&h=240&fit=crop", // bridesmaids
+    "https://images.unsplash.com/photo-1525772764200-be829a350797?w=240&h=240&fit=crop", // wedding cake
+    "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=240&h=240&fit=crop", // celebration
   ];
 
   return (
@@ -359,19 +362,20 @@ function PhotoGridMockup() {
 
           {/* Grid */}
           <div className="grid grid-cols-3 gap-1 p-2">
-            {tiles.map((t, i) => (
+            {photos.map((src, i) => (
               <div
                 key={i}
-                style={{ animationDelay: t.delay }}
-                className={`photo-in aspect-square rounded-md bg-gradient-to-br ${t.gradient}`}
-              />
-            ))}
-            {tiles.slice(0, 3).reverse().map((t, i) => (
-              <div
-                key={`b-${i}`}
-                style={{ animationDelay: `${(i + 6) * 80}ms` }}
-                className={`photo-in aspect-square rounded-md bg-gradient-to-br ${t.gradient} opacity-90`}
-              />
+                style={{ animationDelay: `${i * 70}ms` }}
+                className="photo-in aspect-square overflow-hidden rounded-md bg-muted"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt=""
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </div>
             ))}
           </div>
         </div>
