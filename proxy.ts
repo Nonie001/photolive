@@ -39,8 +39,8 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Gate /dashboard routes behind auth.
-  if (!user && pathname.startsWith("/dashboard")) {
+  // Gate /dashboard and /account routes behind auth.
+  if (!user && (pathname.startsWith("/dashboard") || pathname.startsWith("/account"))) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
