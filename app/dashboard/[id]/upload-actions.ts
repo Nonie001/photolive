@@ -80,9 +80,8 @@ export async function uploadPhotosAction(
         });
       if (thumbErr) { fail++; continue; }
 
-      // Insert DB row
-      await supabase.from("photos").insert({
-        id,
+      // Insert DB row (use admin to bypass RLS; ownership already verified)
+      const { error: insErr } = await admin.from("photos").insert({
         event_id: eventId,
         storage_path: storagePath,
         thumb_path: thumbPath,
@@ -91,9 +90,11 @@ export async function uploadPhotosAction(
         bytes: file.size,
         taken_at: null,
       });
+      if (insErr) { fail++; continue; }
 
       ok++;
-    } catch {
+    } catch (e) {
+      console.error("upload error:", e);
       fail++;
     }
   }
