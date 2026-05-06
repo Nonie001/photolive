@@ -340,33 +340,34 @@ function PhotoGridMockup() {
     "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=240&h=240&fit=crop", // celebration
   ];
 
+
   return (
     <div className="relative">
-      {/* Phone frame */}
-      <div className="relative mx-auto aspect-[9/16] w-full max-w-[300px] rounded-[2.5rem] border-[10px] border-foreground/90 bg-foreground/95 p-2 shadow-2xl">
-        {/* Notch */}
-        <div className="absolute left-1/2 top-1.5 z-10 h-5 w-20 -translate-x-1/2 rounded-b-2xl bg-foreground" />
+      {/* Ultra-thin glass phone frame with float animation */}
+      <div className="phone-float relative mx-auto aspect-[9/19] w-full max-w-[260px] rounded-[2.2rem] border-4 border-white/60 bg-white/30 shadow-xl backdrop-blur-lg dark:border-black/40 dark:bg-black/30 p-1.5" style={{ boxShadow: "0 8px 32px 0 rgba(0,0,0,0.18)" }}>
+        {/* Notch (smaller, more iPhone-like) */}
+        <div className="absolute left-1/2 top-1.5 z-10 h-3 w-16 -translate-x-1/2 rounded-b-xl bg-white/80 dark:bg-black/60 shadow" />
 
-        <div className="relative h-full w-full overflow-hidden rounded-[1.75rem] bg-background">
+        <div className="relative h-full w-full overflow-hidden rounded-[1.5rem] bg-background">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
+          <div className="flex items-center justify-between border-b border-border/60 px-2.5 py-2">
             <div>
               <p className="text-[10px] font-semibold">งานแต่ง · นิว & เจน</p>
               <p className="text-[9px] text-muted-foreground">142 รูป · LIVE</p>
             </div>
-            <div className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-1.5 py-0.5 text-[8px] font-semibold text-rose-500">
+            <div className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-1 py-0.5 text-[8px] font-semibold text-rose-500">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500" />
               LIVE
             </div>
           </div>
 
           {/* Grid */}
-          <div className="grid grid-cols-3 gap-1 p-2">
+          <div className="grid grid-cols-3 gap-0.5 p-1.5">
             {photos.map((src, i) => (
               <div
                 key={i}
                 style={{ animationDelay: `${i * 70}ms` }}
-                className="photo-in aspect-square overflow-hidden rounded-md bg-muted"
+                className="photo-in aspect-square overflow-hidden rounded-lg bg-muted"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
