@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
           },
         ],
   },
+  experimental: {
+    serverActions: {
+      // Allow large photo uploads (default is 1MB).
+      bodySizeLimit: "25mb",
+    },
+  },
 };
 
 export default nextConfig;

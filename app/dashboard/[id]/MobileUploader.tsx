@@ -14,6 +14,16 @@ type Item = {
 };
 
 const MAX_PARALLEL = 3;
+const MAX_SIZE_MB = 25;
+const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+// HEIC/HEIF — sharp can't decode without libheif. Reject early.
+const BLOCKED_EXT = ["heic", "heif"];
+
+function prettySize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export function MobileUploader({ eventId }: { eventId: string }) {
   const [items, setItems] = useState<Item[]>([]);
@@ -31,19 +41,55 @@ export function MobileUploader({ eventId }: { eventId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const addFiles = useCallback((files: FileList | File[]) => {
-    const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
-    if (arr.length === 0) return;
-    setItems((prev) => [
-      ...prev,
-      ...arr.map((file) => ({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        file,
-        previewUrl: URL.createObjectURL(file),
-        status: "pending" as const,
-      })),
-    ]);
-  }, []);
+  const addFiles = useCallback(
+    (files: FileList | File[]) => {
+      const arr = Array.from(files);
+      const accepted: File[] = [];
+      let rejectedHeic = 0;
+      let rejectedSize = 0;
+      let rejectedType = 0;
+
+      for (const f of arr) {
+        const ext = (f.name.split(".").pop() ?? "").toLowerCase();
+        const isImage = f.type.startsWith("image/") || BLOCKED_EXT.includes(ext);
+        if (!isImage) {
+          rejectedType++;
+          continue;
+        }
+        if (BLOCKED_EXT.includes(ext) || /heic|heif/i.test(f.type)) {
+          rejectedHeic++;
+          continue;
+        }
+        if (f.size > MAX_SIZE_BYTES) {
+          rejectedSize++;
+          continue;
+        }
+        accepted.push(f);
+      }
+
+      if (rejectedHeic > 0)
+        toast.show(
+          `ไม่รองรับไฟล์ HEIC ${rejectedHeic} ไฟล์ (ตั้งกล้อง iPhone เป็น "เข้ากันได้สูงสุด" หรือแชร์เป็น JPG)`,
+          "error",
+        );
+      if (rejectedSize > 0)
+        toast.show(`ไฟล์ใหญ่เกิน ${MAX_SIZE_MB}MB ${rejectedSize} ไฟล์`, "error");
+      if (rejectedType > 0)
+        toast.show(`ไม่ใช่ไฟล์รูป ${rejectedType} ไฟล์`, "error");
+
+      if (accepted.length === 0) return;
+      setItems((prev) => [
+        ...prev,
+        ...accepted.map((file) => ({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          file,
+          previewUrl: URL.createObjectURL(file),
+          status: "pending" as const,
+        })),
+      ]);
+    },
+    [toast],
+  );
 
   const removeItem = useCallback((id: string) => {
     setItems((prev) => {
@@ -166,6 +212,9 @@ export function MobileUploader({ eventId }: { eventId: string }) {
       >
         <ImagePlus className="h-6 w-6" />
         <span>แตะเพื่อเลือก หรือลากรูปมาวาง</span>
+        <span className="text-xs opacity-70">
+          JPG, PNG, WebP — สูงสุด {MAX_SIZE_MB}MB ต่อรูป (ไม่รองรับ HEIC)
+        </span>
         <input
           ref={inputRef}
           type="file"
@@ -226,45 +275,53 @@ function PreviewTile({
   disabled: boolean;
 }) {
   return (
-    <div className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={item.previewUrl}
-        alt=""
-        className={`h-full w-full object-cover transition-opacity ${
-          item.status === "uploading" ? "opacity-50" : "opacity-100"
-        }`}
-      />
+    <div className="space-y-1">
+      <div className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={item.previewUrl}
+          alt=""
+          className={`h-full w-full object-cover transition-opacity ${
+            item.status === "uploading" ? "opacity-50" : "opacity-100"
+          }`}
+        />
 
-      {/* status overlay */}
-      {item.status === "uploading" && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-          <Loader2 className="h-5 w-5 animate-spin text-white" />
-        </div>
-      )}
-      {item.status === "done" && (
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-green-600/90 py-1 text-xs text-white">
-          <CheckCircle className="h-3 w-3" />
-          เสร็จ
-        </div>
-      )}
-      {item.status === "error" && (
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-red-600/90 py-1 text-xs text-white" title={item.error}>
-          <XCircle className="h-3 w-3" />
-          ล้มเหลว
-        </div>
-      )}
+        {item.status === "uploading" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <Loader2 className="h-5 w-5 animate-spin text-white" />
+          </div>
+        )}
+        {item.status === "done" && (
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-green-600/90 py-1 text-xs text-white">
+            <CheckCircle className="h-3 w-3" />
+            เสร็จ
+          </div>
+        )}
+        {item.status === "error" && (
+          <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-red-600/90 py-1 text-xs text-white">
+            <XCircle className="h-3 w-3" />
+            ล้มเหลว
+          </div>
+        )}
 
-      {/* remove button (hidden while uploading) */}
-      {!disabled && item.status !== "uploading" && item.status !== "done" && (
-        <button
-          type="button"
-          onClick={onRemove}
-          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
-          aria-label="ลบ"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        {!disabled && item.status !== "uploading" && item.status !== "done" && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+            aria-label="ลบ"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+      <p className="truncate text-[10px] text-muted-foreground" title={item.file.name}>
+        {item.file.name} · {prettySize(item.file.size)}
+      </p>
+      {item.status === "error" && item.error && (
+        <p className="text-[10px] text-red-600 dark:text-red-400" title={item.error}>
+          {item.error.length > 60 ? item.error.slice(0, 60) + "…" : item.error}
+        </p>
       )}
     </div>
   );
