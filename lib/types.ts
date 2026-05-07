@@ -19,3 +19,21 @@ export type PhotoRow = {
   uploaded_at: string;
   bytes: number | null;
 };
+
+export type PlanRow = {
+  id: string;
+  name: string;
+  storage_bytes: number;
+  duration_days: number | null;
+  price_thb: number;
+  sort: number;
+};
+
+export type SubscriptionRow = {
+  user_id: string;
+  plan_id: string;
+  started_at: string;
+  expires_at: string | null;
+  bytes_used: number;
+  updated_at: string;
+};

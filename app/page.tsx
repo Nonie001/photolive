@@ -15,8 +15,11 @@ import {
   PartyPopper,
   Briefcase,
   CheckCircle2,
+  Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { PLANS } from "@/lib/plans";
+import { formatBytes } from "@/lib/utils";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -36,6 +39,7 @@ export default async function Home() {
           <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
             <a href="#features" className="hover:text-foreground">ฟีเจอร์</a>
             <a href="#how" className="hover:text-foreground">วิธีใช้</a>
+            <a href="#pricing" className="hover:text-foreground">ราคา</a>
             <a href="#usecases" className="hover:text-foreground">เหมาะกับงาน</a>
           </nav>
           {user ? (
@@ -103,7 +107,7 @@ export default async function Home() {
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
                 <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                ใช้งานฟรี ไม่จำกัดอีเวนต์
+                เริ่มฟรี 1 GB
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
@@ -225,6 +229,78 @@ export default async function Home() {
             <UseCase icon={<Trophy className="h-5 w-5" />} label="งานวิ่ง / กีฬา" />
             <UseCase icon={<PartyPopper className="h-5 w-5" />} label="ปาร์ตี้ / วันเกิด" />
             <UseCase icon={<Briefcase className="h-5 w-5" />} label="คอร์ปอเรท" />
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="border-b border-border bg-muted/30">
+        <div className="mx-auto w-full max-w-6xl px-5 py-20">
+          <div className="text-center">
+            <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              ราคา
+            </p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+              เลือกแพ็กเกจที่เหมาะกับคุณ
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              เริ่มฟรี 1 GB ไม่ต้องใส่บัตรเครดิต — อัปเกรดเมื่อพร้อม
+            </p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {PLANS.map((plan) => (
+              <div
+                key={plan.id}
+                className={`relative flex flex-col rounded-2xl border bg-background p-6 ${
+                  plan.highlight
+                    ? "border-foreground/40 shadow-xl"
+                    : "border-border"
+                }`}
+              >
+                {plan.highlight && (
+                  <span className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background">
+                    <Sparkles className="h-3 w-3" />
+                    ยอดนิยม
+                  </span>
+                )}
+                <h3 className="text-lg font-bold">{plan.name}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {plan.tagline}
+                </p>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold">
+                    {plan.priceThb === 0 ? "ฟรี" : `฿${plan.priceThb}`}
+                  </span>
+                  {plan.durationDays && plan.priceThb > 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      / {plan.durationDays} วัน
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-sm font-medium">
+                  {formatBytes(plan.storageBytes)} storage
+                </p>
+                <ul className="mt-5 flex-1 space-y-2 text-sm">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={user ? "/dashboard/billing" : "/login"}
+                  className={`mt-6 inline-flex h-10 w-full items-center justify-center rounded-full px-4 text-sm font-semibold ${
+                    plan.highlight
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border hover:bg-muted"
+                  }`}
+                >
+                  {plan.priceThb === 0 ? "เริ่มใช้ฟรี" : "เลือกแพ็กเกจ"}
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
       </section>

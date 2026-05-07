@@ -4,6 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
+function mapDbError(message: string): string {
+  if (message.includes("storage_quota_exceeded"))
+    return "พื้นที่เก็บเต็มแล้ว — กรุณาอัปเกรดแพ็กเกจ";
+  if (message.includes("subscription_expired"))
+    return "แพ็กเกจหมดอายุ — กรุณาต่ออายุก่อนอัปโหลด";
+  return message;
+}
+
 /**
  * Upload a single photo. Designed to be called in parallel from the client
  * for fast multi-file uploads with per-file progress.
@@ -74,7 +82,13 @@ export async function uploadOnePhoto(
       bytes: file.size,
       taken_at: null,
     });
-    if (insErr) return { ok: false, error: insErr.message };
+    if (insErr) {
+      // Quota/expiry trigger fired — clean up uploaded blobs so we don't
+      // accumulate orphans (and don't double-bill the user's quota).
+      await admin.storage.from("photos").remove([storagePath]).catch(() => {});
+      await admin.storage.from("thumbs").remove([thumbPath]).catch(() => {});
+      return { ok: false, error: mapDbError(insErr.message) };
+    }
 
     revalidatePath(`/dashboard/${eventId}`);
     return { ok: true };

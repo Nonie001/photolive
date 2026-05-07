@@ -1,16 +1,37 @@
 import Link from "next/link";
-import { Plus, Calendar, ImageIcon } from "lucide-react";
+import { Plus, Calendar, ImageIcon, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { formatBytes } from "@/lib/utils";
+import { getPlan } from "@/lib/plans";
 
 export const metadata = { title: "หน้าหลัก — PhotoLive" };
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // Single round-trip: events + photo count via embedded relationship.
-  const { data: events } = await supabase
-    .from("events")
-    .select("id, name, slug, event_date, created_at, photos(count)")
-    .order("created_at", { ascending: false });
+  const [{ data: events }, { data: sub }] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, name, slug, event_date, created_at, photos(count)")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("subscriptions")
+      .select("plan_id, expires_at, bytes_used")
+      .eq("user_id", user!.id)
+      .maybeSingle(),
+  ]);
+
+  const planId = sub?.plan_id ?? "free";
+  const plan = getPlan(planId);
+  const used = sub?.bytes_used ?? 0;
+  const total = plan?.storageBytes ?? 1;
+  const pct = Math.min(100, Math.round((used / total) * 100));
+  const expired =
+    sub?.expires_at != null && new Date(sub.expires_at) < new Date();
 
   type EventRow = {
     id: string;
@@ -34,6 +55,46 @@ export default async function DashboardPage() {
           สร้างอีเวนต์
         </Link>
       </div>
+
+      <Link
+        href="/dashboard/billing"
+        className="block rounded-2xl border border-border bg-muted/30 p-5 transition-colors hover:bg-muted/60"
+      >
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              แพ็กเกจ
+            </p>
+            <p className="mt-0.5 text-base font-semibold">
+              {plan?.name ?? planId}
+              {expired && (
+                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                  <AlertTriangle className="h-3 w-3" />
+                  หมดอายุ
+                </span>
+              )}
+            </p>
+          </div>
+          <p className="text-sm font-medium">
+            {formatBytes(used)}{" "}
+            <span className="text-muted-foreground">
+              / {formatBytes(total)}
+            </span>
+          </p>
+        </div>
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-background">
+          <div
+            className={`h-full rounded-full ${
+              pct >= 90
+                ? "bg-red-500"
+                : pct >= 70
+                  ? "bg-amber-500"
+                  : "bg-green-500"
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </Link>
 
       {!events || events.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-10 text-center">

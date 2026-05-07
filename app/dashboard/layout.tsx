@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Camera, LogOut } from "lucide-react";
+import { Camera, LogOut, CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 
@@ -25,6 +25,13 @@ export default async function DashboardLayout({
             <span>PhotoLive</span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/billing"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-3 text-sm"
+            >
+              <CreditCard className="h-4 w-4" />
+              <span className="hidden sm:inline">แพ็กเกจ</span>
+            </Link>
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {user?.email}
             </span>
