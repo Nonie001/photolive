@@ -7,6 +7,8 @@ import { EventQrCard } from "./EventQrCard";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { MobileUploader } from "./MobileUploader";
 
+export const dynamic = "force-dynamic";
+
 export default async function EventDetailPage({
   params,
 }: {
@@ -14,11 +16,15 @@ export default async function EventDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: event } = await supabase
     .from("events")
     .select("id, name, slug, event_date, created_at")
     .eq("id", id)
+    .eq("owner_id", user!.id)
     .single();
 
   if (!event) notFound();

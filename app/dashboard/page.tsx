@@ -5,6 +5,7 @@ import { formatBytes } from "@/lib/utils";
 import { getPlan } from "@/lib/plans";
 
 export const metadata = { title: "หน้าหลัก — PhotoLive" };
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -13,10 +14,13 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   // Single round-trip: events + photo count via embedded relationship.
+  // Filter by owner_id explicitly — RLS allows public SELECT on events
+  // (for the gallery), so without this we'd see other users' events too.
   const [{ data: events }, { data: sub }] = await Promise.all([
     supabase
       .from("events")
       .select("id, name, slug, event_date, created_at, photos(count)")
+      .eq("owner_id", user!.id)
       .order("created_at", { ascending: false }),
     supabase
       .from("subscriptions")
