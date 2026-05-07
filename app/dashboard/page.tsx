@@ -16,18 +16,24 @@ export default async function DashboardPage() {
   // Single round-trip: events + photo count via embedded relationship.
   // Filter by owner_id explicitly — RLS allows public SELECT on events
   // (for the gallery), so without this we'd see other users' events too.
-  const [{ data: events }, { data: sub }] = await Promise.all([
-    supabase
-      .from("events")
-      .select("id, name, slug, event_date, created_at, photos(count)")
-      .eq("owner_id", user!.id)
-      .order("created_at", { ascending: false }),
-    supabase
+  const { data: events } = await supabase
+    .from("events")
+    .select("id, name, slug, event_date, created_at, photos(count)")
+    .eq("owner_id", user!.id)
+    .order("created_at", { ascending: false });
+
+  // subscriptions may not exist yet if migration hasn't run — fall back gracefully
+  let sub: { plan_id: string; expires_at: string | null; bytes_used: number } | null = null;
+  try {
+    const { data } = await supabase
       .from("subscriptions")
       .select("plan_id, expires_at, bytes_used")
       .eq("user_id", user!.id)
-      .maybeSingle(),
-  ]);
+      .maybeSingle();
+    sub = data;
+  } catch {
+    // table not yet created — ignore
+  }
 
   const planId = sub?.plan_id ?? "free";
   const plan = getPlan(planId);

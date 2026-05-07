@@ -13,11 +13,17 @@ export default async function BillingPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("plan_id, expires_at, bytes_used")
-    .eq("user_id", user!.id)
-    .maybeSingle();
+  let sub: { plan_id: string; expires_at: string | null; bytes_used: number } | null = null;
+  try {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("plan_id, expires_at, bytes_used")
+      .eq("user_id", user!.id)
+      .maybeSingle();
+    sub = data;
+  } catch {
+    // table not yet created
+  }
 
   const planId = sub?.plan_id ?? "free";
   const plan = getPlan(planId);
