@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Loader2 } from "lucide-react";
 import { createEvent, type CreateEventState } from "../actions";
 
 const initialState: CreateEventState = { error: null };
@@ -37,16 +38,23 @@ export function NewEventForm() {
         />
       </div>
       {state.error && (
-        <p className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-          {state.error}
+        <p role="alert" className="rounded-xl border border-red-400 bg-red-50 p-3 text-sm font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          ❌ {state.error}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="h-12 w-full rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-50"
+        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-50"
       >
-        {pending ? "กำลังสร้าง..." : "สร้างอีเวนต์"}
+        {pending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            กำลังสร้าง...
+          </>
+        ) : (
+          "สร้างอีเวนต์"
+        )}
       </button>
     </form>
   );

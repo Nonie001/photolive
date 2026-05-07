@@ -25,7 +25,13 @@ export async function createEvent(
   const supabase = await createClient();
   const {
     data: { user },
+    error: authErr,
   } = await supabase.auth.getUser();
+
+  if (authErr) {
+    console.error("[createEvent] auth error:", authErr.message);
+    return { error: "ไม่สามารถยืนยันตัวตนได้ กรุณาเข้าสู่ระบบใหม่" };
+  }
   if (!user) redirect("/login");
 
   // Try a few times in the (vanishingly rare) case of slug collision.
@@ -49,7 +55,8 @@ export async function createEvent(
       break;
     }
     lastError = error?.message ?? "unknown error";
-    // 23505 = unique_violation
+    console.error(`[createEvent] insert attempt ${attempt + 1} failed:`, lastError, "code:", error?.code);
+    // 23505 = unique_violation (slug collision) — retry
     if (error?.code !== "23505") break;
   }
 
