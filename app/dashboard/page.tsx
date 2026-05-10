@@ -16,11 +16,18 @@ export default async function DashboardPage() {
   // Single round-trip: events + photo count via embedded relationship.
   // Filter by owner_id explicitly — RLS allows public SELECT on events
   // (for the gallery), so without this we'd see other users' events too.
-  const { data: events } = await supabase
+  // NOTE: events<->photos has two FKs (photos.event_id and events.cover_photo_id).
+  // Hint with !event_id to tell PostgREST which relationship to use, otherwise
+  // it returns an "ambiguous relationship" error and data comes back null.
+  const { data: events, error: eventsError } = await supabase
     .from("events")
-    .select("id, name, slug, event_date, created_at, photos(count)")
+    .select("id, name, slug, event_date, created_at, photos!event_id(count)")
     .eq("owner_id", user!.id)
     .order("created_at", { ascending: false });
+
+  if (eventsError) {
+    console.error("[dashboard] events query error:", eventsError.message, eventsError.details);
+  }
 
   // subscriptions may not exist yet if migration hasn't run — fall back gracefully
   let sub: { plan_id: string; expires_at: string | null; bytes_used: number } | null = null;
