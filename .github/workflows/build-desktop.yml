@@ -39,18 +39,6 @@ jobs:
           echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env
           echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
 
-      - name: Create app icon (Windows)
-        if: runner.os == 'Windows'
-        working-directory: desktop
-        shell: python
-        run: |
-          from PIL import Image
-          import os
-          os.makedirs('resources', exist_ok=True)
-          img = Image.new('RGBA', (256, 256), (59, 130, 246, 255))
-          img.save('resources/icon.ico', format='ICO', sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])
-          print('icon.ico created')
-
       - name: Build (Windows)
         if: runner.os == 'Windows'
         working-directory: desktop
