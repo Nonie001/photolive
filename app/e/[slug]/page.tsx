@@ -66,7 +66,7 @@ export default async function GalleryPage({
 
   return (
     <div className="flex flex-1 flex-col">
-      <GalleryHeader event={event} />
+      <GalleryHeader event={event} photoCount={initialPhotos?.length ?? 0} />
       <GalleryRealtime
         eventId={event.id}
         eventName={event.name}

@@ -114,47 +114,48 @@ export function GalleryRealtime({
 
   if (photos.length === 0) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-4 py-20 text-center">
-        <p className="text-muted-foreground">ยังไม่มีรูป</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          รอช่างภาพอัปโหลด รูปจะขึ้นที่นี่อัตโนมัติ
-        </p>
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-4 py-24 text-center">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted text-3xl">📷</div>
+        <p className="font-medium">ยังไม่มีรูปในขณะนี้</p>
+        <p className="mt-1 text-sm text-muted-foreground">รูปจะขึ้นที่นี่ทันทีหลังช่างภาพอัปโหลด</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-3 py-4 sm:px-4">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{photos.length} รูป</p>
+    <div className="flex-1">
+      {/* toolbar */}
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-3 pb-2 pt-3 sm:px-4">
+        <p className="text-xs text-muted-foreground">{photos.length} รูป</p>
         <DownloadAllButton photos={photos} eventName={eventName} />
       </div>
 
-      <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 lg:grid-cols-5">
+      {/* grid — 3 cols on mobile, no gap for full-bleed look */}
+      <div className="grid grid-cols-3 gap-0.5 sm:grid-cols-4 sm:gap-1 md:grid-cols-5 lg:grid-cols-6">
         {photos.map((photo, i) => (
           <button
             key={photo.id}
             type="button"
             onClick={() => setLightboxIndex(i)}
-            className="photo-in group relative aspect-square overflow-hidden rounded-md bg-muted"
+            className="photo-in group relative aspect-square overflow-hidden bg-muted"
           >
             <Image
               src={thumbUrl(photo)}
               alt=""
               fill
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-              className="object-cover transition-transform duration-200 group-hover:scale-105"
+              sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
+              className="object-cover transition-transform duration-300 group-active:scale-95"
               unoptimized
             />
           </button>
         ))}
       </div>
 
-      <div ref={sentinelRef} className="h-12" />
+      <div ref={sentinelRef} className="h-16" />
       {loadingMore && (
-        <p className="py-4 text-center text-sm text-muted-foreground">
-          กำลังโหลด...
-        </p>
+        <div className="flex justify-center py-6">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
       )}
 
       {lightboxIndex !== null && (
