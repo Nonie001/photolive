@@ -127,32 +127,46 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
   async function scanAllPhotos(selfDesc: Float32Array) {
     setStage("scanning");
     setProgress({ done: 0, total: photos.length });
+
     const matched: PhotoRow[] = [];
+    let done = 0;
 
-    for (let i = 0; i < photos.length; i++) {
-      const photo = photos[i];
-      try {
-        let faces = await getCachedFaces(photo.id);
-        if (!faces) {
-          const img = await loadImage(thumbUrl(photo));
-          const detected = await describeAllFromImage(img);
-          faces = detected;
-          await setCachedFaces(photo.id, faces);
-        }
+    // Process photos in parallel with concurrency limit.
+    // face-api runs on the CPU — 4 concurrent workers is a good sweet spot.
+    const CONCURRENCY = 4;
+    const queue = [...photos];
 
-        const best = faces.reduce<number>(
-          (min, f) => Math.min(min, distance(selfDesc, f)),
-          Infinity,
-        );
-        if (best <= MATCH_THRESHOLD) {
-          matched.push(photo);
-          setMatches([...matched]);
+    async function worker() {
+      while (queue.length > 0) {
+        const photo = queue.shift();
+        if (!photo) break;
+        try {
+          let faces = await getCachedFaces(photo.id);
+          if (!faces) {
+            const img = await loadImage(thumbUrl(photo));
+            const detected = await describeAllFromImage(img);
+            faces = detected;
+            await setCachedFaces(photo.id, faces);
+          }
+          const best = faces.reduce<number>(
+            (min, f) => Math.min(min, distance(selfDesc, f)),
+            Infinity,
+          );
+          if (best <= MATCH_THRESHOLD) {
+            matched.push(photo);
+            setMatches([...matched]);
+          }
+        } catch {
+          // skip this photo
         }
-      } catch {
-        // skip this photo
+        done++;
+        setProgress({ done, total: photos.length });
       }
-      setProgress({ done: i + 1, total: photos.length });
     }
+
+    await Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, photos.length) }, worker),
+    );
 
     setStage("done");
   }
