@@ -1,7 +1,7 @@
 // Mirrors the rows seeded in supabase/migrations/0002_billing.sql.
 // Used for UI rendering when DB is unreachable / SSR fallback.
 
-export type PlanId = "free" | "basic" | "standard" | "pro";
+export type PlanId = "free" | "starter" | "pro" | "ultra";
 
 export type PlanDef = {
   id: PlanId;
@@ -15,63 +15,64 @@ export type PlanDef = {
 };
 
 const GB = 1024 * 1024 * 1024;
+const MB = 1024 * 1024;
 
 export const PLANS: PlanDef[] = [
   {
     id: "free",
     name: "Free",
-    storageBytes: 1 * GB,
+    storageBytes: 150 * MB,
     durationDays: null,
     priceThb: 0,
     tagline: "ทดลองใช้งานก่อนตัดสินใจ",
     features: [
-      "พื้นที่เก็บ 1 GB",
+      "พื้นที่เก็บ 150 MB",
       "สร้างอีเวนต์ได้ไม่จำกัด",
-      "อัปโหลดผ่านเว็บ + CLI",
+      "อัปโหลดผ่านเว็บ + Desktop App",
       "QR Code + แกลเลอรีสาธารณะ",
     ],
   },
   {
-    id: "basic",
-    name: "Basic",
+    id: "starter",
+    name: "Starter",
     storageBytes: 5 * GB,
-    durationDays: 30,
-    priceThb: 299,
-    tagline: "เหมาะกับงานเล็ก ๆ 1–2 งาน/เดือน",
+    durationDays: 14,
+    priceThb: 399,
+    tagline: "เหมาะกับงานเล็ก ๆ หรืองานครั้งเดียว",
     features: [
       "พื้นที่เก็บ 5 GB",
-      "ใช้งาน 30 วัน",
+      "ใช้งาน 14 วัน",
       "AI ค้นหาด้วยใบหน้า",
       "ดาวน์โหลดทั้งอัลบั้ม (.zip)",
     ],
   },
   {
-    id: "standard",
-    name: "Standard",
+    id: "pro",
+    name: "Pro",
     storageBytes: 10 * GB,
     durationDays: 30,
-    priceThb: 399,
+    priceThb: 699,
     tagline: "ยอดนิยม — งานแต่ง / รับปริญญา",
     features: [
       "พื้นที่เก็บ 10 GB",
       "ใช้งาน 30 วัน",
       "AI ค้นหาด้วยใบหน้า",
-      "Realtime upload จาก CLI",
+      "Realtime upload จาก Desktop App",
       "ซัพพอร์ตทางอีเมล",
     ],
     highlight: true,
   },
   {
-    id: "pro",
-    name: "Pro",
+    id: "ultra",
+    name: "Ultra",
     storageBytes: 30 * GB,
     durationDays: 30,
-    priceThb: 599,
+    priceThb: 1290,
     tagline: "ช่างภาพมืออาชีพ / สตูดิโอ",
     features: [
       "พื้นที่เก็บ 30 GB",
       "ใช้งาน 30 วัน",
-      "ทุกอย่างใน Standard",
+      "ทุกอย่างใน Pro",
       "Priority support",
       "เหมาะกับงานหลายงาน/เดือน",
     ],
