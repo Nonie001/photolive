@@ -17,6 +17,15 @@ export type PlanDef = {
 const GB = 1024 * 1024 * 1024;
 const MB = 1024 * 1024;
 
+const ALL_FEATURES = [
+  "อัปโหลดผ่านเว็บ + Desktop App",
+  "QR Code + แกลเลอรีสาธารณะ",
+  "AI ค้นหาด้วยใบหน้า",
+  "Realtime upload จาก Desktop App",
+  "ดาวน์โหลดทั้งอัลบั้ม (.zip)",
+  "ซัพพอร์ตทางอีเมล",
+];
+
 export const PLANS: PlanDef[] = [
   {
     id: "free",
@@ -25,12 +34,7 @@ export const PLANS: PlanDef[] = [
     durationDays: null,
     priceThb: 0,
     tagline: "ทดลองใช้งานก่อนตัดสินใจ",
-    features: [
-      "พื้นที่เก็บ 150 MB",
-      "สร้างอีเวนต์ได้ไม่จำกัด",
-      "อัปโหลดผ่านเว็บ + Desktop App",
-      "QR Code + แกลเลอรีสาธารณะ",
-    ],
+    features: ["พื้นที่เก็บ 150 MB", "ไม่มีวันหมดอายุ", ...ALL_FEATURES],
   },
   {
     id: "starter",
@@ -39,12 +43,7 @@ export const PLANS: PlanDef[] = [
     durationDays: 14,
     priceThb: 399,
     tagline: "เหมาะกับงานเล็ก ๆ หรืองานครั้งเดียว",
-    features: [
-      "พื้นที่เก็บ 5 GB",
-      "ใช้งาน 14 วัน",
-      "AI ค้นหาด้วยใบหน้า",
-      "ดาวน์โหลดทั้งอัลบั้ม (.zip)",
-    ],
+    features: ["พื้นที่เก็บ 5 GB", "ใช้งาน 14 วัน", ...ALL_FEATURES],
   },
   {
     id: "pro",
@@ -53,13 +52,7 @@ export const PLANS: PlanDef[] = [
     durationDays: 30,
     priceThb: 699,
     tagline: "ยอดนิยม — งานแต่ง / รับปริญญา",
-    features: [
-      "พื้นที่เก็บ 10 GB",
-      "ใช้งาน 30 วัน",
-      "AI ค้นหาด้วยใบหน้า",
-      "Realtime upload จาก Desktop App",
-      "ซัพพอร์ตทางอีเมล",
-    ],
+    features: ["พื้นที่เก็บ 10 GB", "ใช้งาน 30 วัน", ...ALL_FEATURES],
     highlight: true,
   },
   {
@@ -69,13 +62,7 @@ export const PLANS: PlanDef[] = [
     durationDays: 30,
     priceThb: 1290,
     tagline: "ช่างภาพมืออาชีพ / สตูดิโอ",
-    features: [
-      "พื้นที่เก็บ 30 GB",
-      "ใช้งาน 30 วัน",
-      "ทุกอย่างใน Pro",
-      "Priority support",
-      "เหมาะกับงานหลายงาน/เดือน",
-    ],
+    features: ["พื้นที่เก็บ 30 GB", "ใช้งาน 30 วัน", ...ALL_FEATURES],
   },
 ];
 
