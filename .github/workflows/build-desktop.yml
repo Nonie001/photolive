@@ -55,3 +55,22 @@ jobs:
           name: photolive-${{ runner.os }}
           path: desktop/${{ matrix.artifact }}
           if-no-files-found: error
+
+      - name: Rename artifact for release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cp desktop/dist/*Setup*.exe desktop/dist/PhotoLive-Setup.exe
+          else
+            cp desktop/dist/*.dmg desktop/dist/PhotoLive.dmg
+          fi
+
+      - name: Upload to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            desktop/dist/PhotoLive-Setup.exe
+            desktop/dist/PhotoLive.dmg
+          fail_on_unmatched_files: false

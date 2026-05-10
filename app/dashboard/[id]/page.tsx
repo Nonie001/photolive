@@ -89,7 +89,7 @@ export default async function EventDetailPage({
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <a
-            href="/downloads/PhotoLive-Setup.exe"
+            href="https://github.com/Nonie001/photolive/releases/latest/download/PhotoLive-Setup.exe"
             className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm transition-colors hover:bg-muted/60"
           >
             <Monitor className="h-5 w-5 shrink-0 text-blue-500" />
@@ -99,7 +99,7 @@ export default async function EventDetailPage({
             </div>
           </a>
           <a
-            href="/downloads/PhotoLive.dmg"
+            href="https://github.com/Nonie001/photolive/releases/latest/download/PhotoLive.dmg"
             className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm transition-colors hover:bg-muted/60"
           >
             <Apple className="h-5 w-5 shrink-0 text-muted-foreground" />
@@ -110,19 +110,6 @@ export default async function EventDetailPage({
           </a>
         </div>
 
-        <details className="group">
-          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground list-none flex items-center gap-1">
-            <span className="group-open:hidden">▶</span>
-            <span className="hidden group-open:inline">▼</span>
-            ใช้ CLI แทน
-          </summary>
-          <div className="mt-2 space-y-1">
-            <p className="text-xs text-muted-foreground">Event slug ของงานนี้:</p>
-            <pre className="overflow-x-auto rounded-lg bg-background p-3 font-mono text-xs">
-{`npm run start -- --event ${event.slug} --folder "C:\\Photos"`}
-            </pre>
-          </div>
-        </details>
       </div>
 
       <div className="rounded-2xl border border-red-200 bg-red-50/40 p-5 dark:border-red-900/50 dark:bg-red-950/20">
