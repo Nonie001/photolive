@@ -201,8 +201,8 @@ export default async function Home() {
             />
             <Step
               n="2"
-              title="เชื่อมกล้องหรืออัปจากมือถือ"
-              body="ตั้ง CLI watch folder ที่เครื่องช่างภาพ หรืออัปจากเว็บโดยตรง"
+              title="ติดตั้ง PhotoLive Desktop"
+              body="โหลดแอปฟรี เปิดโฟลเดอร์ รูปจากกล้องขึ้นเว็บอัตโนมัติ — รองรับ Windows และ macOS"
             />
             <Step
               n="3"
