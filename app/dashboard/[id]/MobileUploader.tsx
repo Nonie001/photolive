@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, CheckCircle, XCircle, X, Upload } from "lucide-react";
-import { uploadOnePhoto } from "./upload-actions";
+import { getUploadUrls, insertPhotoRecord } from "./upload-actions";
+import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
 
 type Item = {
@@ -14,10 +15,47 @@ type Item = {
 };
 
 const MAX_PARALLEL = 3;
-const MAX_SIZE_MB = 25;
+const MAX_SIZE_MB = 50; // Direct upload bypasses Vercel — Supabase bucket limit is 50 MB
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
-// HEIC/HEIF — sharp can't decode without libheif. Reject early.
+// HEIC/HEIF — Canvas API can't decode these. Reject early.
 const BLOCKED_EXT = ["heic", "heif"];
+
+/** Generate a resized JPEG thumbnail in the browser using Canvas. */
+async function generateThumbnail(
+  file: File,
+  maxSize = 800,
+): Promise<{ blob: Blob; width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      let { naturalWidth: w, naturalHeight: h } = img;
+      if (w > maxSize || h > maxSize) {
+        const ratio = Math.min(maxSize / w, maxSize / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve({ blob, width: img.naturalWidth, height: img.naturalHeight });
+          else reject(new Error("thumbnail generation failed"));
+        },
+        "image/jpeg",
+        0.82,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("image load failed"));
+    };
+    img.src = url;
+  });
+}
 
 function prettySize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -29,7 +67,6 @@ export function MobileUploader({ eventId }: { eventId: string }) {
   const [items, setItems] = useState<Item[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
@@ -110,19 +147,51 @@ export function MobileUploader({ eventId }: { eventId: string }) {
     setItems((prev) =>
       prev.map((x) => (x.id === item.id ? { ...x, status: "uploading" } : x)),
     );
-    const fd = new FormData();
-    fd.set("eventId", eventId);
-    fd.set("photo", item.file, item.file.name);
     try {
-      const res = await uploadOnePhoto(fd);
+      const ext = (item.file.name.split(".").pop() ?? "jpg").toLowerCase();
+
+      // 1. Get signed upload URLs from server (no file data sent to Vercel)
+      const urls = await getUploadUrls(eventId, ext);
+      if (!urls.ok || !urls.photoPath || !urls.photoToken || !urls.thumbPath || !urls.thumbToken) {
+        throw new Error(urls.error ?? "ไม่สามารถสร้าง URL ได้");
+      }
+
+      const supabase = createClient();
+
+      // 2. Upload original directly to Supabase Storage (bypasses Vercel limit)
+      const { error: photoErr } = await supabase.storage
+        .from("photos")
+        .uploadToSignedUrl(urls.photoPath, urls.photoToken, item.file, {
+          contentType: item.file.type || "image/jpeg",
+        });
+      if (photoErr) throw new Error(photoErr.message);
+
+      // 3. Generate thumbnail in browser
+      const { blob: thumbBlob, width, height } = await generateThumbnail(item.file);
+
+      // 4. Upload thumbnail directly to Supabase Storage
+      const { error: thumbErr } = await supabase.storage
+        .from("thumbs")
+        .uploadToSignedUrl(urls.thumbPath, urls.thumbToken, thumbBlob, {
+          contentType: "image/jpeg",
+        });
+      if (thumbErr) throw new Error(thumbErr.message);
+
+      // 5. Insert DB record (only metadata — tiny payload)
+      const res = await insertPhotoRecord({
+        eventId,
+        storagePath: urls.photoPath,
+        thumbPath: urls.thumbPath,
+        width,
+        height,
+        bytes: item.file.size,
+      });
+      if (!res.ok) throw new Error(res.error ?? "บันทึกข้อมูลไม่สำเร็จ");
+
       setItems((prev) =>
-        prev.map((x) =>
-          x.id === item.id
-            ? { ...x, status: res.ok ? "done" : "error", error: res.error }
-            : x,
-        ),
+        prev.map((x) => (x.id === item.id ? { ...x, status: "done" } : x)),
       );
-      return res.ok;
+      return true;
     } catch (e) {
       setItems((prev) =>
         prev.map((x) =>
@@ -161,11 +230,6 @@ export function MobileUploader({ eventId }: { eventId: string }) {
     setIsUploading(false);
     if (okCount > 0) toast.show(`อัปโหลดสำเร็จ ${okCount} รูป`, "success");
     if (failCount > 0) toast.show(`ล้มเหลว ${failCount} รูป`, "error");
-
-    // Refresh server data
-    startTransition(() => {
-      // revalidate happens server-side; just trigger re-render hydration
-    });
   }
 
   function onDrop(e: React.DragEvent) {
@@ -204,7 +268,7 @@ export function MobileUploader({ eventId }: { eventId: string }) {
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
-        className={`mt-4 flex min-h-[100px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-sm transition-colors ${
+        className={`mt-4 flex min-h-25 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-sm transition-colors ${
           dragOver
             ? "border-primary bg-primary/5 text-foreground"
             : "border-border bg-background text-muted-foreground hover:border-foreground/40"
