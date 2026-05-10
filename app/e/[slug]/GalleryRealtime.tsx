@@ -126,11 +126,17 @@ export function GalleryRealtime({
     <div className="flex-1">
       {/* toolbar */}
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-3 pb-2 pt-3 sm:px-4">
-        <p className="text-xs text-muted-foreground">{photos.length} รูป</p>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+            Live
+          </span>
+          <span className="text-xs text-muted-foreground">{photos.length} รูป</span>
+        </div>
         <DownloadAllButton photos={photos} eventName={eventName} />
       </div>
 
-      {/* grid — 3 cols on mobile, no gap for full-bleed look */}
+      {/* grid */}
       <div className="grid grid-cols-3 gap-0.5 sm:grid-cols-4 sm:gap-1 md:grid-cols-5 lg:grid-cols-6">
         {photos.map((photo, i) => (
           <button

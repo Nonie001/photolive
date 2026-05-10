@@ -45,38 +45,52 @@ export function GalleryHeader({ event, photoCount }: Props) {
 
   return (
     <>
-      <header className="sticky top-0 z-20 border-b border-border/60 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-bold sm:text-base">{event.name}</h1>
-            <p className="text-xs text-muted-foreground">
-              {dateStr ?? ""}{dateStr && photoCount !== undefined ? " · " : ""}{photoCount !== undefined ? `${photoCount} รูป` : ""}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Link
-              href={`/e/${event.slug}/find`}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm"
-            >
-              <Sparkles className="h-3 w-3" />
-              <span>ค้นรูปตัวเอง</span>
-            </Link>
-            <button
-              type="button"
-              onClick={() => setShowQr(true)}
-              aria-label="แสดง QR"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 transition-colors hover:bg-muted"
-            >
-              <QrCode className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={share}
-              aria-label="แชร์"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/80 transition-colors hover:bg-muted"
-            >
-              {shared ? <Check className="h-4 w-4 text-green-500" /> : <Share2 className="h-4 w-4" />}
-            </button>
+      {/* Brand header */}
+      <header className="sticky top-0 z-20">
+        {/* gradient brand bar */}
+        <div className="bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-500">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-2.5">
+            {/* logo + event name */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold tracking-widest text-white/70 uppercase">PhotoLive</span>
+                <span className="text-white/40">·</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium text-white">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-300" />
+                  LIVE
+                </span>
+              </div>
+              <h1 className="mt-0.5 truncate text-sm font-bold text-white sm:text-base">{event.name}</h1>
+              {dateStr && (
+                <p className="text-xs text-white/60">{dateStr}{photoCount !== undefined ? ` · ${photoCount} รูป` : ""}</p>
+              )}
+            </div>
+            {/* actions */}
+            <div className="flex items-center gap-1.5">
+              <Link
+                href={`/e/${event.slug}/find`}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-violet-700 shadow"
+              >
+                <Sparkles className="h-3 w-3" />
+                ค้นรูปตัวเอง
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowQr(true)}
+                aria-label="QR"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur"
+              >
+                <QrCode className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={share}
+                aria-label="แชร์"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur"
+              >
+                {shared ? <Check className="h-4 w-4 text-green-300" /> : <Share2 className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
