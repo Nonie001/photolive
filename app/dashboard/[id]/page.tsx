@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, ImageIcon } from "lucide-react";
+import { ArrowLeft, ExternalLink, ImageIcon, Monitor, Apple } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { eventPublicUrl } from "@/lib/utils";
 import { EventQrCard } from "./EventQrCard";
@@ -79,15 +79,50 @@ export default async function EventDetailPage({
 
       <MobileUploader eventId={event.id} />
 
-      <div className="rounded-2xl border border-border bg-muted/30 p-5">
-        <h2 className="font-semibold">อัปโหลดอัตโนมัติด้วย CLI (ช่างภาพ)</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          ใช้ <span className="font-mono">uploader CLI</span> ที่เครื่องของช่างภาพ
-          ให้ watch โฟลเดอร์ที่กล้อง tether ลง:
-        </p>
-        <pre className="mt-3 overflow-x-auto rounded-lg bg-background p-3 font-mono text-xs">
-          npm run upload -- --event {event.slug} --folder &quot;C:\Photos&quot;
-        </pre>
+      <div className="rounded-2xl border border-border bg-muted/30 p-5 space-y-4">
+        <div>
+          <h2 className="font-semibold">โปรแกรมอัปโหลดอัตโนมัติ (ช่างภาพ)</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            ติดตั้งโปรแกรมที่เครื่องช่างภาพ — เปิดโฟลเดอร์แล้วรูปขึ้นเว็บอัตโนมัติ
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <a
+            href="/downloads/PhotoLive-Setup.exe"
+            className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm transition-colors hover:bg-muted/60"
+          >
+            <Monitor className="h-5 w-5 shrink-0 text-blue-500" />
+            <div>
+              <p className="font-medium">Windows</p>
+              <p className="text-xs text-muted-foreground">PhotoLive-Setup.exe</p>
+            </div>
+          </a>
+          <a
+            href="/downloads/PhotoLive.dmg"
+            className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm transition-colors hover:bg-muted/60"
+          >
+            <Apple className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <div>
+              <p className="font-medium">macOS</p>
+              <p className="text-xs text-muted-foreground">PhotoLive.dmg</p>
+            </div>
+          </a>
+        </div>
+
+        <details className="group">
+          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground list-none flex items-center gap-1">
+            <span className="group-open:hidden">▶</span>
+            <span className="hidden group-open:inline">▼</span>
+            ใช้ CLI แทน
+          </summary>
+          <div className="mt-2 space-y-1">
+            <p className="text-xs text-muted-foreground">Event slug ของงานนี้:</p>
+            <pre className="overflow-x-auto rounded-lg bg-background p-3 font-mono text-xs">
+{`npm run start -- --event ${event.slug} --folder "C:\\Photos"`}
+            </pre>
+          </div>
+        </details>
       </div>
 
       <div className="rounded-2xl border border-red-200 bg-red-50/40 p-5 dark:border-red-900/50 dark:bg-red-950/20">
