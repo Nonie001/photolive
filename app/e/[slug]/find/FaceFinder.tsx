@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,7 +15,7 @@ import { thumbUrl } from "@/lib/storage";
 import type { PhotoRow } from "@/lib/types";
 import { Lightbox } from "../Lightbox";
 
-const MATCH_THRESHOLD = 0.55; // lower = stricter; 0.5–0.6 is typical
+const MATCH_THRESHOLD = 0.55;
 
 type Stage = "idle" | "capturing" | "computing-self" | "scanning" | "done";
 
@@ -27,11 +27,9 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // Webcam refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Pre-warm models on mount.
   useEffect(() => {
     loadFaceApi().catch((e) => setError(`โหลดโมเดล AI ไม่สำเร็จ: ${e.message}`));
     return () => stopCamera();
@@ -51,7 +49,6 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
       });
       streamRef.current = stream;
       setStage("capturing");
-      // Wait next tick for video element to mount.
       requestAnimationFrame(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -59,9 +56,7 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
         }
       });
     } catch (e) {
-      setError(
-        `เปิดกล้องไม่ได้: ${e instanceof Error ? e.message : "permission denied"}`,
-      );
+      setError(`เปิดกล้องไม่ได้: ${e instanceof Error ? e.message : "permission denied"}`);
     }
   }
 
@@ -74,13 +69,11 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
     canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    // Mirror selfie horizontally (more natural).
     ctx.translate(size, 0);
     ctx.scale(-1, 1);
     const sx = (video.videoWidth - size) / 2;
     const sy = (video.videoHeight - size) / 2;
     ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
-
     const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
     setSelfiePreview(dataUrl);
     stopCamera();
@@ -114,9 +107,7 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
         }
         await scanAllPhotos(selfDesc);
       } catch (err) {
-        setError(
-          `ประมวลผลล้มเหลว: ${err instanceof Error ? err.message : "error"}`,
-        );
+        setError(`ประมวลผลล้มเหลว: ${err instanceof Error ? err.message : "error"}`);
         setStage("idle");
       }
     },
@@ -127,12 +118,8 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
   async function scanAllPhotos(selfDesc: Float32Array) {
     setStage("scanning");
     setProgress({ done: 0, total: photos.length });
-
     const matched: PhotoRow[] = [];
     let done = 0;
-
-    // Process photos in parallel with concurrency limit.
-    // face-api runs on the CPU — 4 concurrent workers is a good sweet spot.
     const CONCURRENCY = 4;
     const queue = [...photos];
 
@@ -157,17 +144,14 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
             setMatches([...matched]);
           }
         } catch {
-          // skip this photo
+          // skip
         }
         done++;
         setProgress({ done, total: photos.length });
       }
     }
 
-    await Promise.all(
-      Array.from({ length: Math.min(CONCURRENCY, photos.length) }, worker),
-    );
-
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, photos.length) }, worker));
     setStage("done");
   }
 
@@ -181,149 +165,144 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-5">
+    <div className="mx-auto w-full max-w-lg flex-1 px-4 py-6">
       {error && (
-        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-          {error}
+        <div className="mb-4 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+          <span className="mt-0.5 text-base">&#9888;</span>
+          <span>{error}</span>
         </div>
       )}
 
       {stage === "idle" && (
-        <div className="mx-auto max-w-md space-y-5 py-6">
-          <div className="rounded-2xl border border-border bg-muted/30 p-5 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">วิธีใช้</p>
-            <ol className="mt-2 list-decimal space-y-1 pl-4">
-              <li>ถ่าย selfie หรือเลือกรูปใบหน้าตัวเอง</li>
-              <li>ระบบจะค้นหารูปที่มีคุณในงานทั้งหมด</li>
-              <li>ใบหน้าไม่ส่งออกเซิร์ฟเวอร์ ประมวลผลในเครื่องคุณเอง</li>
-            </ol>
+        <div className="flex flex-col gap-4">
+          <div className="rounded-2xl border border-border bg-muted/40 p-4">
+            <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">วิธีใช้</p>
+            <div className="space-y-2.5">
+              {[
+                "ถ่าย selfie หรือเลือกรูปใบหน้าตัวเอง",
+                "ระบบค้นหารูปที่มีคุณในอัลบั้มทั้งหมด",
+                "ใบหน้าไม่ส่งออกเซิร์ฟเวอร์ ประมวลผลในเครื่องเท่านั้น",
+              ].map((text) => (
+                <div key={text} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
+                  <span>{text}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <button
             type="button"
             onClick={startCamera}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground"
+            className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-foreground text-sm font-semibold text-background shadow-sm transition-transform active:scale-[0.98]"
           >
-            <Camera className="h-4 w-4" />
+            <Camera className="h-5 w-5" />
             ถ่าย Selfie ด้วยกล้อง
           </button>
 
-          <label className="inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-border text-sm font-medium">
-            <Upload className="h-4 w-4" />
-            หรือเลือกรูปจากเครื่อง
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={onUpload}
-            />
+          <label className="flex h-14 w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border-2 border-border text-sm font-semibold transition-colors hover:bg-muted active:scale-[0.98]">
+            <Upload className="h-5 w-5" />
+            เลือกรูปจากเครื่อง
+            <input type="file" accept="image/*" className="hidden" onChange={onUpload} />
           </label>
 
-          <p className="text-center text-xs text-muted-foreground">
-            อัลบั้มมี {photos.length} รูป
-          </p>
+          <p className="text-center text-xs text-muted-foreground">อัลบั้มมี {photos.length} รูป</p>
         </div>
       )}
 
       {stage === "capturing" && (
-        <div className="mx-auto max-w-md space-y-4">
-          <div className="overflow-hidden rounded-2xl bg-black">
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              className="h-auto w-full -scale-x-100"
-            />
+        <div className="flex flex-col gap-4">
+          <div className="overflow-hidden rounded-2xl bg-black shadow-lg">
+            <video ref={videoRef} playsInline muted className="h-auto w-full -scale-x-100" />
           </div>
           <button
             type="button"
             onClick={captureSelfie}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-foreground text-sm font-semibold text-background transition-transform active:scale-[0.98]"
           >
-            <Camera className="h-4 w-4" />
+            <Camera className="h-5 w-5" />
             ถ่ายรูป
           </button>
-          <button
-            type="button"
-            onClick={reset}
-            className="h-10 w-full text-sm text-muted-foreground"
-          >
+          <button type="button" onClick={reset} className="h-10 w-full text-sm text-muted-foreground">
             ยกเลิก
           </button>
         </div>
       )}
 
       {(stage === "computing-self" || stage === "scanning") && (
-        <div className="mx-auto max-w-md space-y-4 py-6 text-center">
+        <div className="flex flex-col items-center gap-5 py-10">
           {selfiePreview && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={selfiePreview}
-              alt="selfie"
-              className="mx-auto h-32 w-32 rounded-full object-cover"
-            />
+            <img src={selfiePreview} alt="selfie" className="h-24 w-24 rounded-full object-cover ring-4 ring-border shadow" />
           )}
-          <div className="flex items-center justify-center gap-2 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {stage === "computing-self"
-              ? "กำลังวิเคราะห์ใบหน้า..."
-              : `กำลังค้นหา (${progress.done}/${progress.total})`}
+          <div className="flex flex-col items-center gap-3 text-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <p className="text-sm font-medium">
+              {stage === "computing-self" ? "กำลังวิเคราะห์ใบหน้า..." : `กำลังค้นหา ${progress.done} / ${progress.total}`}
+            </p>
+            {stage === "scanning" && (
+              <>
+                <div className="h-1.5 w-56 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-foreground transition-all duration-300"
+                    style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
+                  />
+                </div>
+                {matches.length > 0 && (
+                  <p className="text-xs text-muted-foreground">เจอแล้ว {matches.length} รูป</p>
+                )}
+              </>
+            )}
           </div>
-          {stage === "scanning" && (
-            <>
-              <div className="mx-auto h-2 w-full max-w-xs overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{
-                    width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%`,
-                  }}
-                />
-              </div>
-              {matches.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  เจอแล้ว {matches.length} รูป
-                </p>
-              )}
-            </>
-          )}
         </div>
       )}
 
       {stage === "done" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm">
-              พบ <span className="font-semibold">{matches.length}</span> รูป
-              จากทั้งหมด {photos.length} รูป
-            </p>
+            <div>
+              <span className="text-2xl font-bold">{matches.length}</span>
+              <span className="ml-1.5 text-sm text-muted-foreground">รูป จาก {photos.length} รูป</span>
+            </div>
             <button
               type="button"
               onClick={reset}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               ค้นใหม่
             </button>
           </div>
 
+          {selfiePreview && (
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={selfiePreview} alt="selfie" className="h-12 w-12 rounded-full object-cover" />
+              <p className="text-sm text-muted-foreground">
+                {matches.length === 0 ? "ไม่พบรูปที่ตรงกัน" : `พบ ${matches.length} รูปที่มีคุณอยู่`}
+              </p>
+            </div>
+          )}
+
           {matches.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-10 text-center text-sm text-muted-foreground">
-              ไม่เจอรูปที่ตรงกับใบหน้าของคุณในอัลบั้มนี้
+            <div className="rounded-2xl border border-dashed border-border p-12 text-center">
+              <p className="mb-2 text-sm text-muted-foreground">ไม่พบรูปที่ตรงกับใบหน้าของคุณ</p>
+              <p className="mt-1 text-xs text-muted-foreground">ลองถ่าย selfie ใหม่ที่แสงชัดขึ้น</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 lg:grid-cols-5">
+            <div className="grid grid-cols-3 gap-0.5 sm:grid-cols-4 sm:gap-1">
               {matches.map((photo, i) => (
                 <button
                   key={photo.id}
                   type="button"
                   onClick={() => setLightboxIndex(i)}
-                  className="photo-in relative aspect-square overflow-hidden rounded-md bg-muted"
+                  className="photo-in relative aspect-square overflow-hidden bg-muted"
                 >
                   <Image
                     src={thumbUrl(photo)}
                     alt=""
                     fill
-                    sizes="(max-width: 640px) 50vw, 25vw"
+                    sizes="(max-width: 640px) 33vw, 25vw"
                     className="object-cover"
                     unoptimized
                   />
@@ -346,11 +325,11 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
   );
 }
 
-function loadImageFromBlob(url: string): Promise<HTMLImageElement> {
+async function loadImageFromBlob(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error("load error"));
+    img.onerror = reject;
     img.src = url;
   });
 }
