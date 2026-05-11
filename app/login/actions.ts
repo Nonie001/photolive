@@ -72,22 +72,6 @@ async function siteOrigin() {
   return `${proto}://${host}`;
 }
 
-export async function signInWithGoogleAction(formData: FormData): Promise<void> {
-  const next = String(formData.get("next") ?? "/dashboard");
-  const supabase = await createClient();
-  const origin = await siteOrigin();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-    },
-  });
-  if (error || !data.url) {
-    redirect(`/login?error=${encodeURIComponent(error?.message ?? "oauth")}`);
-  }
-  redirect(data.url);
-}
-
 export async function resetPasswordAction(
   _prev: AuthState,
   formData: FormData,
