@@ -8,7 +8,6 @@ import type { PhotoRow } from "@/lib/types";
 import { Lightbox } from "./Lightbox";
 import { DownloadAllButton } from "./DownloadAllButton";
 import { Check, Download, X } from "lucide-react";
-import JSZip from "jszip";
 
 type Props = {
   eventId: string;
@@ -50,7 +49,6 @@ export function GalleryRealtime({
   async function downloadSelected() {
     const selected = photos.filter((p) => selectedIds.has(p.id));
     if (selected.length === 0) return;
-    const zip = new JSZip();
     setDlProgress({ done: 0, total: selected.length });
     let done = 0;
     for (const photo of selected) {
@@ -58,20 +56,20 @@ export function GalleryRealtime({
         const res = await fetch(originalUrl(photo));
         const blob = await res.blob();
         const name = photo.storage_path.split("/").pop() ?? `${photo.id}.jpg`;
-        zip.file(name, blob);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        // small delay so browser/mobile has time to handle each file
+        await new Promise((r) => setTimeout(r, 300));
       } catch { /* skip */ }
       done++;
       setDlProgress({ done, total: selected.length });
     }
-    const blob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${eventName.replace(/[^\w\s-]/g, "_")}_selected.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
     setDlProgress(null);
     exitSelectMode();
   }
