@@ -51,13 +51,15 @@ export async function signUpAction(
   if (error) {
     return { error: error.message };
   }
+  // Supabase returns identities: [] when the email is already registered
+  // (instead of an error, to prevent email enumeration).
+  if (data.user && data.user.identities?.length === 0) {
+    return { error: "อีเมลนี้มีบัญชีอยู่แล้ว — กรุณาเข้าสู่ระบบหรือใช้ลืมรหัสผ่าน" };
+  }
   if (data.session) {
     redirect(next);
   }
-  return {
-    error: null,
-    info: "สมัครสำเร็จ แต่ต้องยืนยันอีเมลก่อน — เช็คเมล (ถ้าไม่เจอลองดู junk/spam)",
-  };
+  redirect(`/login/verify?email=${encodeURIComponent(email)}`);
 }
 
 async function siteOrigin() {

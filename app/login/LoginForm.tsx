@@ -22,8 +22,24 @@ export function LoginForm() {
 
   const [mode, setMode] = useState<Mode>("signin");
   const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const action = mode === "signup" ? signUpAction : signInAction;
   const [state, formAction, pending] = useActionState(action, initialState);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (mode === "signup") {
+      const form = e.currentTarget;
+      const pw = (form.elements.namedItem("password") as HTMLInputElement).value;
+      const cpw = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value;
+      if (pw !== cpw) {
+        e.preventDefault();
+        setConfirmError("รหัสผ่านไม่ตรงกัน — กรุณากรอกใหม่");
+        return;
+      }
+    }
+    setConfirmError(null);
+  }
 
   return (
     <div className="space-y-5">
@@ -71,7 +87,7 @@ export function LoginForm() {
         </button>
       </div>
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
         <input type="hidden" name="next" value={next} />
 
         <div className="space-y-1.5">
@@ -133,9 +149,40 @@ export function LoginForm() {
           </div>
         </div>
 
-        {state.error && (
+        {mode === "signup" && (
+          <div className="space-y-1.5">
+            <label htmlFor="confirmPassword" className="text-sm font-medium">
+              ยืนยันรหัสผ่าน
+            </label>
+            <div className="relative">
+              <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPw ? "text" : "password"}
+                required
+                minLength={6}
+                autoComplete="new-password"
+                placeholder="กรอกรหัสผ่านอีกครั้ง"
+                className="h-12 w-full rounded-xl border border-border bg-background/50 pl-10 pr-11 text-base outline-none focus:border-fuchsia-500/50 transition-colors"
+                disabled={pending}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPw((v) => !v)}
+                className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                tabIndex={-1}
+                aria-label={showConfirmPw ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+              >
+                {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {(confirmError || state.error) && (
           <p className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-            {state.error}
+            {confirmError ?? state.error}
           </p>
         )}
         {state.info && (

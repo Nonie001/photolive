@@ -19,5 +19,5 @@ export async function updatePasswordAction(
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return { error: error.message };
-  return { error: null, info: "บันทึกรหัสผ่านใหม่เรียบร้อย" };
+  redirect("/dashboard");
 }
