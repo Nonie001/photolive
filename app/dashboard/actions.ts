@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateEventSlug } from "@/lib/utils";
+import { r2 } from "@/lib/r2";
+import { ListObjectsV2Command, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 export type CreateEventState = { error: string | null };
 
@@ -90,16 +92,16 @@ export async function deleteEvent(formData: FormData) {
     return { error: "ไม่พบอีเวนต์หรือไม่มีสิทธิ์" };
   }
 
-  // Best-effort storage cleanup using service-role (RLS is fine but admin
-  // client lets us bulk-list).
-  const admin = createAdminClient();
+  // Best-effort storage cleanup using R2
   for (const bucket of ["photos", "thumbs"] as const) {
-    const { data: files } = await admin.storage.from(bucket).list(id, {
-      limit: 1000,
-    });
-    if (files && files.length > 0) {
-      const paths = files.map((f) => `${id}/${f.name}`);
-      await admin.storage.from(bucket).remove(paths);
+    const listed = await r2.send(
+      new ListObjectsV2Command({ Bucket: bucket, Prefix: `${id}/` }),
+    );
+    const objects = listed.Contents?.map((o) => ({ Key: o.Key! })) ?? [];
+    if (objects.length > 0) {
+      await r2.send(
+        new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: objects } }),
+      );
     }
   }
 

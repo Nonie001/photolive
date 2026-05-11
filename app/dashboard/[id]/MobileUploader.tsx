@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, CheckCircle, XCircle, X, Upload } from "lucide-react";
 import { getUploadUrls, insertPhotoRecord } from "./upload-actions";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
 
 type Item = {
@@ -152,30 +151,28 @@ export function MobileUploader({ eventId }: { eventId: string }) {
 
       // 1. Get signed upload URLs from server (no file data sent to Vercel)
       const urls = await getUploadUrls(eventId, ext);
-      if (!urls.ok || !urls.photoPath || !urls.photoToken || !urls.thumbPath || !urls.thumbToken) {
+      if (!urls.ok || !urls.photoPath || !urls.photoUploadUrl || !urls.thumbPath || !urls.thumbUploadUrl) {
         throw new Error(urls.error ?? "ไม่สามารถสร้าง URL ได้");
       }
 
-      const supabase = createClient();
-
-      // 2. Upload original directly to Supabase Storage (bypasses Vercel limit)
-      const { error: photoErr } = await supabase.storage
-        .from("photos")
-        .uploadToSignedUrl(urls.photoPath, urls.photoToken, item.file, {
-          contentType: item.file.type || "image/jpeg",
-        });
-      if (photoErr) throw new Error(photoErr.message);
+      // 2. Upload original directly to R2 (bypasses Vercel limit)
+      const photoRes = await fetch(urls.photoUploadUrl, {
+        method: "PUT",
+        body: item.file,
+        headers: { "Content-Type": item.file.type || "image/jpeg" },
+      });
+      if (!photoRes.ok) throw new Error(`อัปโหลดรูปไม่สำเร็จ: ${photoRes.status}`);
 
       // 3. Generate thumbnail in browser
       const { blob: thumbBlob, width, height } = await generateThumbnail(item.file);
 
-      // 4. Upload thumbnail directly to Supabase Storage
-      const { error: thumbErr } = await supabase.storage
-        .from("thumbs")
-        .uploadToSignedUrl(urls.thumbPath, urls.thumbToken, thumbBlob, {
-          contentType: "image/jpeg",
-        });
-      if (thumbErr) throw new Error(thumbErr.message);
+      // 4. Upload thumbnail directly to R2
+      const thumbRes = await fetch(urls.thumbUploadUrl, {
+        method: "PUT",
+        body: thumbBlob,
+        headers: { "Content-Type": "image/jpeg" },
+      });
+      if (!thumbRes.ok) throw new Error(`อัปโหลด thumbnail ไม่สำเร็จ: ${thumbRes.status}`);
 
       // 5. Insert DB record (only metadata — tiny payload)
       const res = await insertPhotoRecord({

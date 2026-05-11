@@ -3,6 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { r2 } from "@/lib/r2";
+import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 /**
  * Step 1 of direct-upload flow.
@@ -17,8 +20,8 @@ export async function getUploadUrls(
   error?: string;
   photoPath?: string;
   thumbPath?: string;
-  photoToken?: string;
-  thumbToken?: string;
+  photoUploadUrl?: string;
+  thumbUploadUrl?: string;
 }> {
   const supabase = await createClient();
   const {
@@ -40,24 +43,19 @@ export async function getUploadUrls(
   const photoPath = `${eventId}/${id}.${safeExt}`;
   const thumbPath = `${eventId}/${id}.jpg`;
 
-  const admin = createAdminClient();
-  const { data: photoSign, error: photoErr } = await admin.storage
-    .from("photos")
-    .createSignedUploadUrl(photoPath);
-  if (photoErr || !photoSign) return { ok: false, error: photoErr?.message ?? "สร้าง URL ไม่ได้" };
+  const photoUploadUrl = await getSignedUrl(
+    r2,
+    new PutObjectCommand({ Bucket: "photos", Key: photoPath }),
+    { expiresIn: 3600 },
+  );
 
-  const { data: thumbSign, error: thumbErr } = await admin.storage
-    .from("thumbs")
-    .createSignedUploadUrl(thumbPath);
-  if (thumbErr || !thumbSign) return { ok: false, error: thumbErr?.message ?? "สร้าง URL ไม่ได้" };
+  const thumbUploadUrl = await getSignedUrl(
+    r2,
+    new PutObjectCommand({ Bucket: "thumbs", Key: thumbPath }),
+    { expiresIn: 3600 },
+  );
 
-  return {
-    ok: true,
-    photoPath,
-    thumbPath,
-    photoToken: photoSign.token,
-    thumbToken: thumbSign.token,
-  };
+  return { ok: true, photoPath, thumbPath, photoUploadUrl, thumbUploadUrl };
 }
 
 /**
@@ -100,8 +98,8 @@ export async function insertPhotoRecord(params: {
 
   if (error) {
     // Quota/expiry trigger fired — clean up orphaned blobs
-    await admin.storage.from("photos").remove([params.storagePath]).catch(() => {});
-    await admin.storage.from("thumbs").remove([params.thumbPath]).catch(() => {});
+    await r2.send(new DeleteObjectCommand({ Bucket: "photos", Key: params.storagePath })).catch(() => {});
+    await r2.send(new DeleteObjectCommand({ Bucket: "thumbs", Key: params.thumbPath })).catch(() => {});
     return { ok: false, error: mapDbError(error.message) };
   }
 
@@ -154,13 +152,14 @@ export async function uploadOnePhoto(
 
     const buf = Buffer.from(await file.arrayBuffer());
 
-    const { error: upErr } = await admin.storage
-      .from("photos")
-      .upload(storagePath, buf, {
-        contentType: file.type || "image/jpeg",
-        upsert: false,
-      });
-    if (upErr) return { ok: false, error: upErr.message };
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: "photos",
+        Key: storagePath,
+        Body: buf,
+        ContentType: file.type || "image/jpeg",
+      }),
+    );
 
     const sharp = (await import("sharp")).default;
     const thumbBuf = await sharp(buf)
@@ -170,13 +169,14 @@ export async function uploadOnePhoto(
       .toBuffer();
     const meta = await sharp(buf).metadata();
 
-    const { error: thumbErr } = await admin.storage
-      .from("thumbs")
-      .upload(thumbPath, thumbBuf, {
-        contentType: "image/jpeg",
-        upsert: false,
-      });
-    if (thumbErr) return { ok: false, error: thumbErr.message };
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: "thumbs",
+        Key: thumbPath,
+        Body: thumbBuf,
+        ContentType: "image/jpeg",
+      }),
+    );
 
     const { error: insErr } = await admin.from("photos").insert({
       event_id: eventId,
@@ -190,8 +190,8 @@ export async function uploadOnePhoto(
     if (insErr) {
       // Quota/expiry trigger fired — clean up uploaded blobs so we don't
       // accumulate orphans (and don't double-bill the user's quota).
-      await admin.storage.from("photos").remove([storagePath]).catch(() => {});
-      await admin.storage.from("thumbs").remove([thumbPath]).catch(() => {});
+      await r2.send(new DeleteObjectCommand({ Bucket: "photos", Key: storagePath })).catch(() => {});
+      await r2.send(new DeleteObjectCommand({ Bucket: "thumbs", Key: thumbPath })).catch(() => {});
       return { ok: false, error: mapDbError(insErr.message) };
     }
 

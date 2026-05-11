@@ -1,9 +1,11 @@
 import type { PhotoRow } from "./types";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const R2_PHOTOS_URL = (process.env.NEXT_PUBLIC_R2_PHOTOS_URL ?? "").replace(/\/$/, "");
+const R2_THUMBS_URL = (process.env.NEXT_PUBLIC_R2_THUMBS_URL ?? "").replace(/\/$/, "");
 
 export function publicUrl(bucket: "photos" | "thumbs", path: string): string {
-  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+  const base = bucket === "photos" ? R2_PHOTOS_URL : R2_THUMBS_URL;
+  return `${base}/${path}`;
 }
 
 export function thumbUrl(p: Pick<PhotoRow, "thumb_path">): string {
