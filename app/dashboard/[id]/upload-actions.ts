@@ -60,7 +60,7 @@ export async function getUploadUrls(
 
 /**
  * Step 2 of direct-upload flow.
- * Called after both files are already uploaded to Supabase Storage.
+ * Called after both files are already uploaded to R2.
  * Inserts the DB row (and handles quota/expiry trigger errors).
  */
 export async function insertPhotoRecord(params: {

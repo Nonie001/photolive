@@ -1,9 +1,19 @@
 import type { NextConfig } from "next";
 
-const supabaseHost = (() => {
+const r2PhotosHost = (() => {
   try {
-    return process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+    return process.env.NEXT_PUBLIC_R2_PHOTOS_URL
+      ? new URL(process.env.NEXT_PUBLIC_R2_PHOTOS_URL).hostname
+      : undefined;
+  } catch {
+    return undefined;
+  }
+})();
+
+const r2ThumbsHost = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_R2_THUMBS_URL
+      ? new URL(process.env.NEXT_PUBLIC_R2_THUMBS_URL).hostname
       : undefined;
   } catch {
     return undefined;
@@ -12,21 +22,12 @@ const supabaseHost = (() => {
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: supabaseHost
-      ? [
-          {
-            protocol: "https",
-            hostname: supabaseHost,
-            pathname: "/storage/v1/object/public/**",
-          },
-        ]
-      : [
-          {
-            protocol: "https",
-            hostname: "*.supabase.co",
-            pathname: "/storage/v1/object/public/**",
-          },
-        ],
+    remotePatterns: [
+      ...(r2PhotosHost ? [{ protocol: "https" as const, hostname: r2PhotosHost }] : []),
+      ...(r2ThumbsHost ? [{ protocol: "https" as const, hostname: r2ThumbsHost }] : []),
+      // fallback for custom R2 domains
+      { protocol: "https" as const, hostname: "*.r2.dev" },
+    ],
   },
   experimental: {
     serverActions: {
