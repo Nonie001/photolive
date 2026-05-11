@@ -4,6 +4,7 @@ import {
   Camera,
   Zap,
   QrCode,
+  Share2,
   Download,
   Sparkles,
   ScanFace,
@@ -316,66 +317,81 @@ function UseCase({ icon, label }: { icon: React.ReactNode; label: string }) {
  * Phone mockup with real event photos from Unsplash (free, no auth required).
  */
 function PhotoGridMockup() {
-  // Curated wedding / event photography from Unsplash.
-  // Using ?w=240&h=240&fit=crop for fast tiny thumbnails.
   const photos = [
-    "https://images.unsplash.com/photo-1519741497674-611481863552?w=240&h=240&fit=crop", // wedding rings
-    "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=240&h=240&fit=crop", // bride bouquet
-    "https://images.unsplash.com/photo-1529636798458-92182e662485?w=240&h=240&fit=crop", // wedding couple
-    "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=240&h=240&fit=crop", // wedding party
-    "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=240&h=240&fit=crop", // cheers glasses
-    "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=240&h=240&fit=crop", // dance floor
-    "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=240&h=240&fit=crop", // bridesmaids
-    "https://images.unsplash.com/photo-1525772764200-be829a350797?w=240&h=240&fit=crop", // wedding cake
-    "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=240&h=240&fit=crop", // celebration
+    "https://images.unsplash.com/photo-1519741497674-611481863552?w=240&h=240&fit=crop",
+    "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=240&h=240&fit=crop",
+    "https://images.unsplash.com/photo-1529636798458-92182e662485?w=240&h=240&fit=crop",
+    "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=240&h=240&fit=crop",
+    "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=240&h=240&fit=crop",
+    "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=240&h=240&fit=crop",
+    "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=240&h=240&fit=crop",
+    "https://images.unsplash.com/photo-1525772764200-be829a350797?w=240&h=240&fit=crop",
+    "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=240&h=240&fit=crop",
   ];
-
 
   return (
     <div className="relative">
-      {/* Ultra-thin glass phone frame with float animation */}
-      <div className="phone-float relative mx-auto aspect-[9/19] w-full max-w-[260px] rounded-[2.2rem] border-4 border-white/60 bg-white/30 shadow-xl backdrop-blur-lg dark:border-black/40 dark:bg-black/30 p-1.5" style={{ boxShadow: "0 8px 32px 0 rgba(0,0,0,0.18)" }}>
-        {/* Notch (smaller, more iPhone-like) */}
-        <div className="absolute left-1/2 top-1.5 z-10 h-3 w-16 -translate-x-1/2 rounded-b-xl bg-white/80 dark:bg-black/60 shadow" />
+      {/* Phone frame */}
+      <div className="phone-float relative mx-auto aspect-[9/19] w-full max-w-[260px] rounded-[2.2rem] border-4 border-black/40 bg-black/30 p-1.5 shadow-2xl">
+        {/* Notch */}
+        <div className="absolute left-1/2 top-1.5 z-10 h-3 w-16 -translate-x-1/2 rounded-b-xl bg-black/60" />
 
-        <div className="relative h-full w-full overflow-hidden rounded-[1.5rem] bg-background">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-border/60 px-2.5 py-2">
-            <div>
-              <p className="text-[10px] font-semibold">งานแต่ง · นิว & เจน</p>
-              <p className="text-[9px] text-muted-foreground">142 รูป · LIVE</p>
+        <div className="relative h-full w-full overflow-hidden rounded-[1.5rem] bg-[#0a0a0a]">
+
+          {/* ── GalleryHeader (real design) ── */}
+          <div className="flex items-center justify-between border-b border-white/8 bg-black/90 px-2.5 py-2">
+            {/* left: logo + brand + event name */}
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <Image src="/icon.png" width={20} height={20} alt="" className="h-5 w-5 shrink-0 rounded-md" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1">
+                  <span className="bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text text-[7px] font-bold uppercase tracking-widest text-transparent">
+                    PhotoLive
+                  </span>
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-green-900/50 px-1 py-px text-[6px] font-semibold text-green-400">
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-green-400" />
+                    LIVE
+                  </span>
+                </div>
+                <p className="truncate text-[9px] font-bold text-white">งานแต่ง · นิว &amp; เจน</p>
+              </div>
             </div>
-            <div className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-1 py-0.5 text-[8px] font-semibold text-rose-500">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500" />
-              LIVE
+            {/* right: AI button + icons */}
+            <div className="flex items-center gap-1">
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 px-1.5 py-0.5 text-[6.5px] font-bold text-white">
+                <Sparkles className="h-2 w-2" />
+                ค้นรูปตัวเอง
+              </span>
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 text-white/50">
+                <QrCode className="h-2.5 w-2.5" />
+              </span>
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 text-white/50">
+                <Share2 className="h-2.5 w-2.5" />
+              </span>
             </div>
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-3 gap-0.5 p-1.5">
+          {/* ── Photo grid ── */}
+          <div className="grid grid-cols-3 gap-0.5 p-0.5">
             {photos.map((src, i) => (
               <div
                 key={i}
                 style={{ animationDelay: `${i * 70}ms` }}
-                className="photo-in aspect-square overflow-hidden rounded-lg bg-muted"
+                className="photo-in aspect-square overflow-hidden rounded-sm bg-muted"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={src}
-                  alt=""
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
+                <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
               </div>
             ))}
           </div>
+
         </div>
       </div>
 
-      {/* Floating "ค้นหาด้วยใบหน้า" badge */}
+      {/* Floating badge: AI face search */}
       <div className="absolute -left-6 top-16 hidden rounded-2xl border border-border bg-background p-3 shadow-xl sm:block">
         <div className="flex items-center gap-2">
-          <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-500 text-white">
+          <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-rose-400 text-white">
             <ScanFace className="h-4 w-4" />
           </div>
           <div>
@@ -385,7 +401,7 @@ function PhotoGridMockup() {
         </div>
       </div>
 
-      {/* Floating "อัปโหลดสำเร็จ" badge */}
+      {/* Floating badge: new photos */}
       <div className="absolute -right-2 bottom-16 hidden rounded-2xl border border-border bg-background p-3 shadow-xl sm:block">
         <div className="flex items-center gap-2">
           <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-white">
