@@ -3,10 +3,12 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { thumbUrl } from "@/lib/storage";
+import { thumbUrl, originalUrl } from "@/lib/storage";
 import type { PhotoRow } from "@/lib/types";
 import { Lightbox } from "./Lightbox";
 import { DownloadAllButton } from "./DownloadAllButton";
+import { Check, Download, X } from "lucide-react";
+import JSZip from "jszip";
 
 type Props = {
   eventId: string;
@@ -25,6 +27,55 @@ export function GalleryRealtime({
   const [hasMore, setHasMore] = useState(initialPhotos.length === pageSize);
   const [loadingMore, setLoadingMore] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Multi-select
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [dlProgress, setDlProgress] = useState<{ done: number; total: number } | null>(null);
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function downloadSelected() {
+    const selected = photos.filter((p) => selectedIds.has(p.id));
+    if (selected.length === 0) return;
+    const zip = new JSZip();
+    setDlProgress({ done: 0, total: selected.length });
+    let done = 0;
+    for (const photo of selected) {
+      try {
+        const res = await fetch(originalUrl(photo));
+        const blob = await res.blob();
+        const name = photo.storage_path.split("/").pop() ?? `${photo.id}.jpg`;
+        zip.file(name, blob);
+      } catch { /* skip */ }
+      done++;
+      setDlProgress({ done, total: selected.length });
+    }
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${eventName.replace(/[^\w\s-]/g, "_")}_selected.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setDlProgress(null);
+    exitSelectMode();
+  }
+
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Realtime subscription.
@@ -133,34 +184,95 @@ export function GalleryRealtime({
           </span>
           <span className="text-xs text-muted-foreground">{photos.length} รูป</span>
         </div>
-        <DownloadAllButton photos={photos} eventName={eventName} />
+        <div className="flex items-center gap-2">
+          {!selectMode ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setSelectMode(true)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs hover:bg-muted transition-colors"
+              >
+                เลือก
+              </button>
+              <DownloadAllButton photos={photos} eventName={eventName} />
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={exitSelectMode}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs hover:bg-muted transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+              ยกเลิก
+            </button>
+          )}
+        </div>
       </div>
 
       {/* grid */}
       <div className="grid grid-cols-3 gap-0.5 sm:grid-cols-4 sm:gap-1 md:grid-cols-5 lg:grid-cols-6">
-        {photos.map((photo, i) => (
-          <button
-            key={photo.id}
-            type="button"
-            onClick={() => setLightboxIndex(i)}
-            className="photo-in group relative aspect-square overflow-hidden bg-muted"
-          >
-            <Image
-              src={thumbUrl(photo)}
-              alt=""
-              fill
-              sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105 group-active:scale-95"
-              unoptimized
-            />
-          </button>
-        ))}
+        {photos.map((photo, i) => {
+          const isSelected = selectedIds.has(photo.id);
+          return (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={() => {
+                if (selectMode) {
+                  toggleSelect(photo.id);
+                } else {
+                  setLightboxIndex(i);
+                }
+              }}
+              className={`photo-in group relative aspect-square overflow-hidden bg-muted ${
+                selectMode && isSelected ? "ring-2 ring-inset ring-fuchsia-500" : ""
+              }`}
+            >
+              <Image
+                src={thumbUrl(photo)}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
+                className={`object-cover transition-transform duration-300 group-hover:scale-105 group-active:scale-95 ${
+                  selectMode && isSelected ? "brightness-75" : ""
+                }`}
+                unoptimized
+              />
+              {selectMode && (
+                <div className={`absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all ${
+                  isSelected
+                    ? "border-fuchsia-500 bg-fuchsia-500"
+                    : "border-white/70 bg-black/30"
+                }`}>
+                  {isSelected && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div ref={sentinelRef} className="h-16" />
       {loadingMore && (
         <div className="flex justify-center py-6">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      )}
+
+      {/* floating download bar */}
+      {selectMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+          <button
+            type="button"
+            onClick={downloadSelected}
+            disabled={dlProgress !== null}
+            className="inline-flex h-12 items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 px-6 text-sm font-semibold text-white shadow-xl shadow-fuchsia-500/30 disabled:opacity-70 transition-transform hover:scale-[1.02]"
+          >
+            <Download className="h-4 w-4" />
+            {dlProgress
+              ? `กำลังโหลด ${dlProgress.done}/${dlProgress.total}...`
+              : `โหลด ${selectedIds.size} รูป`}
+          </button>
         </div>
       )}
 
