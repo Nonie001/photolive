@@ -127,8 +127,8 @@ export function GalleryRealtime({
       {/* toolbar */}
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-3 pb-2 pt-3 sm:px-4">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-900/40 px-2 py-0.5 text-xs font-semibold text-green-400">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
             Live
           </span>
           <span className="text-xs text-muted-foreground">{photos.length} รูป</span>
@@ -150,7 +150,7 @@ export function GalleryRealtime({
               alt=""
               fill
               sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
-              className="object-cover transition-transform duration-300 group-active:scale-95"
+              className="object-cover transition-transform duration-300 group-hover:scale-105 group-active:scale-95"
               unoptimized
             />
           </button>

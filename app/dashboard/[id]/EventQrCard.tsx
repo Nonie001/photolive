@@ -41,14 +41,14 @@ export function EventQrCard({ url, slug }: { url: string; slug: string }) {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-muted/30 p-5">
+    <div className="rounded-2xl border border-border bg-muted/20 p-5 transition-all hover:border-fuchsia-500/20">
       <div className="flex items-start gap-4">
         <div className="rounded-lg bg-white p-2">
           <QRCodeSVG ref={qrRef} value={url} size={96} marginSize={0} level="M" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-muted-foreground">QR สำหรับแขกสแกน</p>
-          <p className="mt-1 truncate font-mono text-sm">/e/{slug}</p>
+          <p className="bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text text-xs font-semibold uppercase tracking-wider text-transparent">QR สำหรับแขกสแกน</p>
+          <p className="mt-1 truncate font-mono text-sm font-semibold">/e/{slug}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"

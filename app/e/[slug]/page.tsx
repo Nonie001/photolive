@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { thumbUrl } from "@/lib/storage";
 import { GalleryRealtime } from "./GalleryRealtime";
 import { GalleryHeader } from "./GalleryHeader";
+import { GallerySplash } from "./GallerySplash";
+import { GalleryGate } from "./GalleryGate";
 
 const PAGE_SIZE = 60;
 
@@ -51,7 +53,7 @@ export default async function GalleryPage({
 
   const { data: event } = await supabase
     .from("events")
-    .select("id, name, slug, event_date")
+    .select("id, name, slug, event_date, photo_access")
     .eq("slug", slug)
     .single();
 
@@ -66,13 +68,18 @@ export default async function GalleryPage({
 
   return (
     <div className="flex flex-1 flex-col">
+      <GallerySplash eventName={event.name} photoCount={initialPhotos?.length ?? 0} />
       <GalleryHeader event={event} photoCount={initialPhotos?.length ?? 0} />
-      <GalleryRealtime
-        eventId={event.id}
-        eventName={event.name}
-        initialPhotos={initialPhotos ?? []}
-        pageSize={PAGE_SIZE}
-      />
+      {event.photo_access === "face_only" ? (
+        <GalleryGate slug={event.slug} eventName={event.name} />
+      ) : (
+        <GalleryRealtime
+          eventId={event.id}
+          eventName={event.name}
+          initialPhotos={initialPhotos ?? []}
+          pageSize={PAGE_SIZE}
+        />
+      )}
     </div>
   );
 }

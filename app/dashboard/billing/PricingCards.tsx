@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Check, Sparkles, Loader2 } from "lucide-react";
-import { PLANS, type PlanDef } from "@/lib/plans";
+import { PLANS, YEARLY_PLANS, getPlansByPeriod, type PlanDef, type BillingPeriod } from "@/lib/plans";
 import { formatBytes } from "@/lib/utils";
 import { subscribeToPlan, type SubscribeState } from "./actions";
 import { useToast } from "@/components/Toast";
@@ -10,15 +10,49 @@ import { useToast } from "@/components/Toast";
 const initialState: SubscribeState = { error: null };
 
 export function PricingCards({ currentPlanId }: { currentPlanId: string }) {
+  const [period, setPeriod] = useState<BillingPeriod>("monthly");
+  const plans = getPlansByPeriod(period);
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {PLANS.map((plan) => (
-        <PlanCard
-          key={plan.id}
-          plan={plan}
-          isCurrent={plan.id === currentPlanId}
-        />
-      ))}
+    <div>
+      {/* Billing period toggle */}
+      <div className="mb-6 flex flex-col items-center gap-2">
+        <div className="inline-flex items-center rounded-full border border-border bg-muted/50 p-1">
+          <button
+            onClick={() => setPeriod("monthly")}
+            className={`rounded-full px-5 py-1.5 text-sm font-medium transition-all ${
+              period === "monthly"
+                ? "bg-background text-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            รายเดือน
+          </button>
+          <button
+            onClick={() => setPeriod("yearly")}
+            className={`rounded-full px-5 py-1.5 text-sm font-medium transition-all ${
+              period === "yearly"
+                ? "bg-background text-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            รายปี
+          </button>
+        </div>
+        <span className="rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 px-3 py-0.5 text-[11px] font-bold text-white">
+          สมัครรายปี ประหยัดสูงสุด 17%
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {plans.map((plan) => (
+          <PlanCard
+            key={`${period}-${plan.id}`}
+            plan={plan}
+            isCurrent={plan.id === currentPlanId}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -56,17 +90,33 @@ function PlanCard({ plan, isCurrent }: { plan: PlanDef; isCurrent: boolean }) {
         </span>
       )}
 
+      {plan.savingsPct && (
+        <span className="absolute -top-3 right-4 rounded-full border border-emerald-500/30 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+          ประหยัด {plan.savingsPct}%
+        </span>
+      )}
+
       <h3 className="text-lg font-bold">{plan.name}</h3>
       <p className="mt-1 text-xs text-muted-foreground">{plan.tagline}</p>
 
-      <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-3xl font-bold">
-          {plan.priceThb === 0 ? "ฟรี" : `฿${plan.priceThb}`}
-        </span>
-        {plan.durationDays && plan.priceThb > 0 && (
-          <span className="text-sm text-muted-foreground">
-            / {plan.durationDays} วัน
+      <div className="mt-4">
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold">
+            {plan.priceThb === 0 ? "ฟรี" : `฿${plan.priceThb.toLocaleString()}`}
           </span>
+          {plan.durationDays === 365 && plan.priceThb > 0 && (
+            <span className="text-sm text-muted-foreground">/ ปี</span>
+          )}
+          {plan.durationDays && plan.durationDays !== 365 && plan.priceThb > 0 && (
+            <span className="text-sm text-muted-foreground">
+              / {plan.durationDays} วัน
+            </span>
+          )}
+        </div>
+        {plan.monthlyEquivThb && (
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            เทียบเท่า ฿{plan.monthlyEquivThb}/เดือน
+          </p>
         )}
       </div>
 

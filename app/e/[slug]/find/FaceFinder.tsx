@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Upload, RotateCcw, Loader2 } from "lucide-react";
+import { Camera, Upload, RotateCcw, Loader2, Lock } from "lucide-react";
 import {
   describeAllFromImage,
   describeFromImage,
@@ -29,10 +29,14 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const cancelRef = useRef(false);
 
   useEffect(() => {
     loadFaceApi().catch((e) => setError(`โหลดโมเดล AI ไม่สำเร็จ: ${e.message}`));
-    return () => stopCamera();
+    return () => {
+      stopCamera();
+      cancelRef.current = true;
+    };
   }, []);
 
   function stopCamera() {
@@ -116,15 +120,23 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
   );
 
   async function scanAllPhotos(selfDesc: Float32Array) {
+    cancelRef.current = false;
     setStage("scanning");
     setProgress({ done: 0, total: photos.length });
     const matched: PhotoRow[] = [];
     let done = 0;
+    let lastFlush = 0;
     const CONCURRENCY = 4;
     const queue = [...photos];
 
+    function flush() {
+      setProgress({ done, total: photos.length });
+      setMatches(matched.slice());
+      lastFlush = Date.now();
+    }
+
     async function worker() {
-      while (queue.length > 0) {
+      while (queue.length > 0 && !cancelRef.current) {
         const photo = queue.shift();
         if (!photo) break;
         try {
@@ -141,21 +153,26 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
           );
           if (best <= MATCH_THRESHOLD) {
             matched.push(photo);
-            setMatches([...matched]);
           }
         } catch {
           // skip
         }
         done++;
-        setProgress({ done, total: photos.length });
+        if (Date.now() - lastFlush >= 150 || done === photos.length) {
+          flush();
+        }
       }
     }
 
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, photos.length) }, worker));
-    setStage("done");
+    if (!cancelRef.current) {
+      flush();
+      setStage("done");
+    }
   }
 
   function reset() {
+    cancelRef.current = true;
     stopCamera();
     setStage("idle");
     setError(null);
@@ -167,7 +184,7 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
   return (
     <div className="mx-auto w-full max-w-lg flex-1 px-4 pb-10 pt-2">
       {error && (
-        <div className="mb-5 flex items-start gap-3 rounded-2xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+        <div className="mb-5 flex items-start gap-3 rounded-2xl bg-red-950/40 p-4 text-sm text-red-300">
           <span className="text-base leading-tight">⚠️</span>
           <span>{error}</span>
         </div>
@@ -177,12 +194,12 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
       {stage === "idle" && (
         <div className="flex flex-col items-center gap-6">
           {/* hero */}
-          <div className="flex flex-col items-center gap-3 pt-4 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted text-4xl">
-              🤳
+          <div className="flex flex-col items-center gap-3 pt-6 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-muted/60 p-3 shadow-lg shadow-fuchsia-500/10 ring-1 ring-border">
+              <Image src="/icon.png" width={56} height={56} alt="PhotoLive" className="h-14 w-14" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight">ค้นหารูปของคุณ</h2>
+              <h2 className="text-xl font-extrabold tracking-tight">ค้นหารูปของคุณ</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 ถ่าย selfie แล้วระบบจะหารูปที่มีคุณให้อัตโนมัติ
               </p>
@@ -190,14 +207,14 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
           </div>
 
           {/* steps */}
-          <div className="w-full space-y-2.5">
+          <div className="w-full space-y-2">
             {[
               { n: "1", label: "ถ่าย selfie หรือเลือกรูปจากเครื่อง" },
               { n: "2", label: "AI ค้นหาใบหน้าของคุณในอัลบั้ม" },
               { n: "3", label: "ดู และดาวน์โหลดรูปที่พบได้เลย" },
             ].map(({ n, label }) => (
-              <div key={n} className="flex items-center gap-3 rounded-2xl bg-muted/50 px-4 py-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
+              <div key={n} className="flex items-center gap-3 rounded-2xl border border-border bg-muted/20 px-4 py-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-orange-400 text-xs font-bold text-white">
                   {n}
                 </span>
                 <span className="text-sm">{label}</span>
@@ -210,20 +227,25 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
             <button
               type="button"
               onClick={startCamera}
-              className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-foreground text-[15px] font-semibold text-background shadow-sm transition-all active:scale-[0.97]"
+              className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 text-[15px] font-bold text-white shadow-lg shadow-fuchsia-500/20 transition-transform active:scale-[0.97] hover:scale-[1.01]"
             >
               <Camera className="h-5 w-5" />
               ถ่าย Selfie ด้วยกล้อง
             </button>
 
-            <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border-2 border-border text-[15px] font-medium transition-colors hover:bg-muted active:scale-[0.97]">
+            <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl border border-border bg-muted/20 text-[15px] font-medium transition-colors hover:bg-muted/40 active:scale-[0.97]">
               <Upload className="h-4 w-4 text-muted-foreground" />
               เลือกรูปจากเครื่อง
               <input type="file" accept="image/*" className="hidden" onChange={onUpload} />
             </label>
           </div>
 
-          <p className="text-xs text-muted-foreground">อัลบั้มมี {photos.length} รูป · ประมวลผลบนอุปกรณ์ของคุณเท่านั้น 🔒</p>
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            อัลบั้มมี {photos.length} รูป
+            <span className="text-border">·</span>
+            <Lock className="h-3 w-3" />
+            ประมวลผลบนอุปกรณ์ของคุณเท่านั้น
+          </p>
         </div>
       )}
 
@@ -281,7 +303,7 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
                 </p>
                 <div className="mt-1 h-1.5 w-64 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-foreground transition-all duration-300"
+                    className="h-full rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 transition-all duration-300"
                     style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
                   />
                 </div>
@@ -307,7 +329,7 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
             <button
               type="button"
               onClick={reset}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border px-4 text-sm font-medium"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-muted/20 px-4 text-sm font-medium transition-colors hover:bg-muted/40"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               ลองใหม่
@@ -338,7 +360,7 @@ export function FaceFinder({ photos }: { photos: PhotoRow[] }) {
               <button
                 type="button"
                 onClick={reset}
-                className="mt-1 h-10 rounded-full bg-foreground px-6 text-sm font-semibold text-background"
+                className="mt-1 h-10 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 px-6 text-sm font-bold text-white shadow-md shadow-fuchsia-500/20"
               >
                 ลองถ่ายใหม่
               </button>

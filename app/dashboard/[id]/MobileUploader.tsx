@@ -242,11 +242,12 @@ export function MobileUploader({ eventId }: { eventId: string }) {
   const doneCount = items.filter((x) => x.status === "done").length;
 
   return (
-    <div className="rounded-2xl border border-border bg-muted/30 p-5">
+    <div className="rounded-2xl border border-border bg-muted/20 p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-semibold">อัปโหลดรูป</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text text-xs font-semibold uppercase tracking-wider text-transparent">อัปโหลด</p>
+          <h2 className="mt-0.5 font-extrabold">อัปโหลดรูป</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             ลากวาง หรือเลือกไฟล์ — อัปโหลดพร้อมกันได้หลายรูป
           </p>
         </div>
@@ -254,7 +255,7 @@ export function MobileUploader({ eventId }: { eventId: string }) {
           <button
             type="button"
             onClick={clearDone}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             ล้างที่เสร็จแล้ว
           </button>
@@ -270,8 +271,8 @@ export function MobileUploader({ eventId }: { eventId: string }) {
         onDrop={onDrop}
         className={`mt-4 flex min-h-25 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-sm transition-colors ${
           dragOver
-            ? "border-primary bg-primary/5 text-foreground"
-            : "border-border bg-background text-muted-foreground hover:border-foreground/40"
+            ? "border-fuchsia-500/60 bg-fuchsia-500/5 text-fuchsia-300"
+            : "border-border bg-background/50 text-muted-foreground hover:border-fuchsia-500/30 hover:bg-muted/20"
         }`}
       >
         <ImagePlus className="h-6 w-6" />
@@ -308,7 +309,7 @@ export function MobileUploader({ eventId }: { eventId: string }) {
               type="button"
               onClick={startUpload}
               disabled={isUploading || pendingCount === 0}
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 px-5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/20 transition-transform hover:scale-[1.02] disabled:opacity-50"
             >
               {isUploading ? (
                 <>

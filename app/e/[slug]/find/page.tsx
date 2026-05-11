@@ -31,19 +31,18 @@ export default async function FindPage({
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-white/8 bg-background/90 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
           <Link
             href={`/e/${event.slug}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted/40 text-muted-foreground transition-colors hover:text-foreground"
             aria-label="กลับ"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold sm:text-lg">
-              ค้นหารูปตัวเอง
-            </h1>
+            <p className="bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text text-xs font-bold uppercase tracking-wider text-transparent">PhotoLive</p>
+            <h1 className="truncate text-sm font-bold leading-tight">ค้นหารูปตัวเอง</h1>
             <p className="truncate text-xs text-muted-foreground">{event.name}</p>
           </div>
         </div>

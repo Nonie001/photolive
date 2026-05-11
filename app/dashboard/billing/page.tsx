@@ -35,22 +35,22 @@ export default async function BillingPage() {
 
   return (
     <div className="space-y-8">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        กลับ
-      </Link>
-
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">แพ็กเกจของฉัน</h1>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          กลับ
+        </Link>
+        <p className="mt-4 bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 bg-clip-text text-xs font-semibold uppercase tracking-wider text-transparent">แพ็กเกจ</p>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight">แพ็กเกจของฉัน</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           จัดการแพ็กเกจและพื้นที่จัดเก็บ
         </p>
       </div>
 
-      <section className="rounded-2xl border border-border bg-muted/30 p-6">
+      <section className="rounded-2xl border border-border bg-muted/20 p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -105,7 +105,7 @@ export default async function BillingPage() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-lg font-semibold">เลือกแพ็กเกจ</h2>
+        <h2 className="mb-6 text-lg font-extrabold">เลือกแพ็กเกจ</h2>
         <PricingCards currentPlanId={planId} />
         <p className="mt-4 text-xs text-muted-foreground">
           * ระบบชำระเงินจริงยังไม่เปิดใช้งาน — กดสมัครเพื่อเปิดใช้งานทันที

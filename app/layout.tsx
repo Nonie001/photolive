@@ -16,10 +16,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  themeColor: "#0a0a0a",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -31,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="th" className={`${notoSansThai.variable} h-full antialiased`}>
+    <html lang="th" className={`${notoSansThai.variable} h-full antialiased dark`}>
       <body className="min-h-full flex flex-col">
         <ToastProvider>{children}</ToastProvider>
       </body>

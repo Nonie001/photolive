@@ -32,7 +32,7 @@ export function LoginForm() {
         <input type="hidden" name="next" value={next} />
         <button
           type="submit"
-          className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium hover:bg-muted"
+          className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-border bg-background/50 text-sm font-medium hover:bg-muted transition-colors"
         >
           <GoogleIcon />
           เข้าสู่ระบบด้วย Google
@@ -50,10 +50,10 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => setMode("signin")}
-          className={`h-9 rounded-full transition ${
+          className={`h-9 rounded-full font-medium transition-all ${
             mode === "signin"
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground"
+              ? "bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 text-white shadow"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           เข้าสู่ระบบ
@@ -61,10 +61,10 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => setMode("signup")}
-          className={`h-9 rounded-full transition ${
+          className={`h-9 rounded-full font-medium transition-all ${
             mode === "signup"
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground"
+              ? "bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 text-white shadow"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           สมัครสมาชิก
@@ -88,7 +88,7 @@ export function LoginForm() {
               autoComplete="email"
               inputMode="email"
               placeholder="you@example.com"
-              className="h-12 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-base outline-none focus:border-foreground"
+              className="h-12 w-full rounded-xl border border-border bg-background/50 pl-10 pr-4 text-base outline-none focus:border-fuchsia-500/50 transition-colors"
               disabled={pending}
             />
           </div>
@@ -118,7 +118,7 @@ export function LoginForm() {
               minLength={6}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               placeholder={mode === "signup" ? "อย่างน้อย 6 ตัวอักษร" : "••••••••"}
-              className="h-12 w-full rounded-xl border border-border bg-background pl-10 pr-11 text-base outline-none focus:border-foreground"
+              className="h-12 w-full rounded-xl border border-border bg-background/50 pl-10 pr-11 text-base outline-none focus:border-fuchsia-500/50 transition-colors"
               disabled={pending}
             />
             <button
@@ -152,7 +152,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={pending}
-          className="h-12 w-full rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-50"
+          className="h-12 w-full rounded-full bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/20 transition-transform hover:scale-[1.01] disabled:opacity-50"
         >
           {pending
             ? "กำลังดำเนินการ..."

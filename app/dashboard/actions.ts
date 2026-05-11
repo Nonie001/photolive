@@ -14,6 +14,7 @@ export async function createEvent(
 ): Promise<CreateEventState> {
   const name = String(formData.get("name") ?? "").trim();
   const eventDate = String(formData.get("event_date") ?? "").trim() || null;
+  const photoAccess = formData.get("photo_access") === "face_only" ? "face_only" : "public";
 
   if (!name) {
     return { error: "กรุณาใส่ชื่ออีเวนต์" };
@@ -46,6 +47,7 @@ export async function createEvent(
         name,
         slug,
         event_date: eventDate,
+        photo_access: photoAccess,
       })
       .select("id, slug")
       .single();
@@ -112,4 +114,25 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+export async function updateEventAccess(
+  id: string,
+  photoAccess: "public" | "face_only",
+): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "ไม่ได้เข้าสู่ระบบ" };
+
+  const { error } = await supabase
+    .from("events")
+    .update({ photo_access: photoAccess })
+    .eq("id", id)
+    .eq("owner_id", user.id);
+
+  if (error) return { error: error.message };
+  revalidatePath(`/dashboard/${id}`);
+  return {};
 }

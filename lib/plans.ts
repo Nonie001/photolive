@@ -1,7 +1,13 @@
-// Mirrors the rows seeded in supabase/migrations/0002_billing.sql.
+// Mirrors the rows seeded in supabase/migrations/0002_billing.sql + 0005_yearly_plans.sql.
 // Used for UI rendering when DB is unreachable / SSR fallback.
 
-export type PlanId = "free" | "starter" | "pro" | "ultra";
+export type BillingPeriod = "monthly" | "yearly";
+
+export type PlanId =
+  | "free"
+  | "starter"
+  | "pro" | "pro_yearly"
+  | "ultra" | "ultra_yearly";
 
 export type PlanDef = {
   id: PlanId;
@@ -9,6 +15,10 @@ export type PlanDef = {
   storageBytes: number;
   durationDays: number | null; // null = no expiry
   priceThb: number;
+  /** Per-month equivalent price shown for yearly plans */
+  monthlyEquivThb?: number;
+  /** Discount percentage versus buying monthly × 12 */
+  savingsPct?: number;
   tagline: string;
   features: string[];
   highlight?: boolean;
@@ -26,6 +36,7 @@ const ALL_FEATURES = [
   "ซัพพอร์ตทางอีเมล",
 ];
 
+/** Monthly plans — backward-compatible default */
 export const PLANS: PlanDef[] = [
   {
     id: "free",
@@ -66,6 +77,37 @@ export const PLANS: PlanDef[] = [
   },
 ];
 
+/** Yearly plans — Pro and Ultra only */
+export const YEARLY_PLANS: PlanDef[] = [
+  {
+    id: "pro_yearly",
+    name: "Pro",
+    storageBytes: 10 * GB,
+    durationDays: 365,
+    priceThb: 6999,
+    monthlyEquivThb: 583,
+    savingsPct: 17,
+    tagline: "ยอดนิยม — ช่างภาพ full-time",
+    features: ["พื้นที่เก็บ 10 GB", "ใช้งาน 1 ปี (365 วัน)", ...ALL_FEATURES],
+    highlight: true,
+  },
+  {
+    id: "ultra_yearly",
+    name: "Ultra",
+    storageBytes: 30 * GB,
+    durationDays: 365,
+    priceThb: 12999,
+    monthlyEquivThb: 1083,
+    savingsPct: 16,
+    tagline: "สตูดิโอและทีมช่างภาพมืออาชีพ",
+    features: ["พื้นที่เก็บ 30 GB", "ใช้งาน 1 ปี (365 วัน)", ...ALL_FEATURES],
+  },
+];
+
+export function getPlansByPeriod(period: BillingPeriod): PlanDef[] {
+  return period === "yearly" ? YEARLY_PLANS : PLANS;
+}
+
 export function getPlan(id: string): PlanDef | undefined {
-  return PLANS.find((p) => p.id === id);
+  return [...PLANS, ...YEARLY_PLANS].find((p) => p.id === id);
 }
