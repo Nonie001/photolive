@@ -1,0 +1,48 @@
+name: Build Desktop App
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "desktop/**"
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Create .env
+        shell: pwsh
+        run: |
+          @"
+          VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_R2_ACCOUNT_ID=${{ secrets.VITE_R2_ACCOUNT_ID }}
+          VITE_R2_ACCESS_KEY_ID=${{ secrets.VITE_R2_ACCESS_KEY_ID }}
+          VITE_R2_SECRET_ACCESS_KEY=${{ secrets.VITE_R2_SECRET_ACCESS_KEY }}
+          "@ | Out-File -FilePath .env -Encoding utf8
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build & package
+        run: npm run dist:win
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhotoLive-Windows
+          path: desktop/dist/*.exe
+          retention-days: 30
