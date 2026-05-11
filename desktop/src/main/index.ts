@@ -7,6 +7,9 @@ import { startWatcher, type WatcherHandle } from "./watcher";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const R2_ACCOUNT_ID = import.meta.env.VITE_R2_ACCOUNT_ID as string;
+const R2_ACCESS_KEY_ID = import.meta.env.VITE_R2_ACCESS_KEY_ID as string;
+const R2_SECRET_ACCESS_KEY = import.meta.env.VITE_R2_SECRET_ACCESS_KEY as string;
 
 let mainWindow: BrowserWindow | null = null;
 let watcherHandle: WatcherHandle | null = null;
@@ -139,6 +142,9 @@ ipcMain.handle(
         supabaseUrl: SUPABASE_URL,
         supabaseAnonKey: SUPABASE_ANON_KEY,
         supabaseAccessToken: session.access_token,
+        r2AccountId: R2_ACCOUNT_ID,
+        r2AccessKeyId: R2_ACCESS_KEY_ID,
+        r2SecretAccessKey: R2_SECRET_ACCESS_KEY,
         eventSlug: slug,
         folder,
         concurrency,

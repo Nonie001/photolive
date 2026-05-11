@@ -7,6 +7,7 @@ import sharp from "sharp";
 import exifr from "exifr";
 import ws from "ws";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { loadState, markUploaded, saveState, type State } from "./state";
 
 const SUPPORTED = new Set([".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"]);
@@ -27,6 +28,9 @@ export type WatcherOptions = {
   supabaseUrl: string;
   supabaseAnonKey: string;
   supabaseAccessToken: string;
+  r2AccountId: string;
+  r2AccessKeyId: string;
+  r2SecretAccessKey: string;
   eventSlug: string;
   folder: string;
   concurrency: number;
@@ -43,6 +47,15 @@ export type WatcherHandle = {
 export async function startWatcher(opts: WatcherOptions): Promise<WatcherHandle> {
   const folder = path.resolve(opts.folder);
   await fs.mkdir(folder, { recursive: true });
+
+  const r2 = new S3Client({
+    region: "auto",
+    endpoint: `https://${opts.r2AccountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: opts.r2AccessKeyId,
+      secretAccessKey: opts.r2SecretAccessKey,
+    },
+  });
 
   const supabase = createClient(opts.supabaseUrl, opts.supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -98,6 +111,7 @@ export async function startWatcher(opts: WatcherOptions): Promise<WatcherHandle>
           filePath,
           eventId: event.id,
           supabase,
+          r2,
           thumbSize: opts.thumbSize,
           quality: opts.quality,
         });
@@ -146,12 +160,13 @@ type ProcessArgs = {
   filePath: string;
   eventId: string;
   supabase: SupabaseClient;
+  r2: S3Client;
   thumbSize: number;
   quality: number;
 };
 
 async function processFile(args: ProcessArgs): Promise<void> {
-  const { filePath, eventId, supabase, thumbSize, quality } = args;
+  const { filePath, eventId, supabase, r2, thumbSize, quality } = args;
 
   const buf = await fs.readFile(filePath);
   const ext = path.extname(filePath).toLowerCase().replace(".", "") || "jpg";
@@ -184,17 +199,21 @@ async function processFile(args: ProcessArgs): Promise<void> {
     .toBuffer();
 
   await retry(() =>
-    supabase.storage
-      .from("photos")
-      .upload(originalPath, buf, { contentType: mime(ext), upsert: false })
-      .then(throwIfError),
+    r2.send(new PutObjectCommand({
+      Bucket: "photos",
+      Key: originalPath,
+      Body: buf,
+      ContentType: mime(ext),
+    })),
   );
 
   await retry(() =>
-    supabase.storage
-      .from("thumbs")
-      .upload(thumbPath, thumbBuf, { contentType: "image/jpeg", upsert: false })
-      .then(throwIfError),
+    r2.send(new PutObjectCommand({
+      Bucket: "thumbs",
+      Key: thumbPath,
+      Body: thumbBuf,
+      ContentType: "image/jpeg",
+    })),
   );
 
   await retry(() =>
