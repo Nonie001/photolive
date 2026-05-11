@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatBytes } from "@/lib/utils";
 import { getPlan } from "@/lib/plans";
@@ -7,7 +7,12 @@ import { PricingCards } from "./PricingCards";
 
 export const metadata = { title: "แพ็กเกจ — PhotoLive" };
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; error?: string; pending?: string }>;
+}) {
+  const { success, error: payError, pending } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,6 +54,33 @@ export default async function BillingPage() {
           จัดการแพ็กเกจและพื้นที่จัดเก็บ
         </p>
       </div>
+
+      {success === "1" && (
+        <div className="flex items-start gap-2 rounded-xl border border-green-300 bg-green-50 p-4 text-sm text-green-700 dark:border-green-900/50 dark:bg-green-950/30 dark:text-green-300">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>ชำระเงินสำเร็จ — เปิดใช้งานแพ็กเกจใหม่เรียบร้อยแล้ว</span>
+        </div>
+      )}
+      {payError && (
+        <div className="flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>การชำระเงินไม่สำเร็จ ({payError}) — ลองใหม่อีกครั้งหรือติดต่อฝ่ายสนับสนุน</span>
+        </div>
+      )}
+      {pending === "1" && (
+        <div className="flex items-start gap-2 rounded-xl border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800 dark:border-yellow-700/50 dark:bg-yellow-950/30 dark:text-yellow-300">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-semibold">รอยืนยันการชำระเงิน</p>
+            <p className="mt-0.5 text-yellow-700 dark:text-yellow-400">ระบบกำลังรอการยืนยันจากธนาคาร — หากชำระผ่าน PromptPay แล้ว แพ็กเกจจะเปิดใช้งานอัตโนมัติภายในไม่กี่นาที</p>
+            <p className="mt-1.5">
+              <a href="/dashboard/billing" className="underline underline-offset-2 hover:opacity-80">รีเฟรชหน้านี้</a>
+              {" · "}
+              <a href="/dashboard/billing" className="underline underline-offset-2 hover:opacity-80">ลองชำระใหม่</a>
+            </p>
+          </div>
+        </div>
+      )}
 
       <section className="rounded-2xl border border-border bg-muted/20 p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -107,10 +139,6 @@ export default async function BillingPage() {
       <section>
         <h2 className="mb-6 text-lg font-extrabold">เลือกแพ็กเกจ</h2>
         <PricingCards currentPlanId={planId} />
-        <p className="mt-4 text-xs text-muted-foreground">
-          * ระบบชำระเงินจริงยังไม่เปิดใช้งาน — กดสมัครเพื่อเปิดใช้งานทันที
-          (สำหรับการทดสอบ)
-        </p>
       </section>
     </div>
   );

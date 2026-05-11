@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { Check, Sparkles, Loader2 } from "lucide-react";
 import { PLANS, YEARLY_PLANS, getPlansByPeriod, type PlanDef, type BillingPeriod } from "@/lib/plans";
 import { formatBytes } from "@/lib/utils";
@@ -58,17 +59,18 @@ export function PricingCards({ currentPlanId }: { currentPlanId: string }) {
 }
 
 function PlanCard({ plan, isCurrent }: { plan: PlanDef; isCurrent: boolean }) {
+  // Free plan uses direct subscribe; paid plans go through Omise
   const [state, formAction, pending] = useActionState(
-    subscribeToPlan,
+    plan.priceThb === 0 ? subscribeToPlan : (subscribeToPlan as never),
     initialState,
   );
   const [confirming, setConfirming] = useState(false);
   const toast = useToast();
 
-  // Surface result via toast
+  // Surface result via toast (free plan only)
   if (state.ok) {
     queueMicrotask(() => toast.show("เปลี่ยนแพ็กเกจสำเร็จ", "success"));
-    state.ok = false; // prevent loop
+    state.ok = false;
   }
   if (state.error) {
     queueMicrotask(() => toast.show(state.error!, "error"));
@@ -138,41 +140,48 @@ function PlanCard({ plan, isCurrent }: { plan: PlanDef; isCurrent: boolean }) {
           <div className="inline-flex h-10 w-full items-center justify-center rounded-full border border-border text-sm font-medium text-muted-foreground">
             แพ็กเกจปัจจุบัน
           </div>
-        ) : confirming ? (
-          <form action={formAction} className="flex gap-2">
-            <input type="hidden" name="plan_id" value={plan.id} />
-            <button
-              type="submit"
-              disabled={pending}
-              className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-            >
-              {pending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "ยืนยัน"
-              )}
-            </button>
+        ) : plan.priceThb === 0 ? (
+          // Free plan — direct subscribe
+          confirming ? (
+            <form action={formAction} className="flex gap-2">
+              <input type="hidden" name="plan_id" value={plan.id} />
+              <button
+                type="submit"
+                disabled={pending}
+                className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              >
+                {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "ยืนยัน"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                disabled={pending}
+                className="inline-flex h-10 items-center justify-center rounded-full border border-border px-4 text-sm"
+              >
+                ยกเลิก
+              </button>
+            </form>
+          ) : (
             <button
               type="button"
-              onClick={() => setConfirming(false)}
-              disabled={pending}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-border px-4 text-sm"
+              onClick={() => setConfirming(true)}
+              className="inline-flex h-10 w-full items-center justify-center rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-muted"
             >
-              ยกเลิก
+              ใช้แพ็กเกจนี้
             </button>
-          </form>
+          )
         ) : (
-          <button
-            type="button"
-            onClick={() => setConfirming(true)}
-            className={`inline-flex h-10 w-full items-center justify-center rounded-full px-4 text-sm font-semibold ${
+          // Paid plan — go to checkout page
+          <Link
+            href={`/dashboard/billing/checkout?plan_id=${plan.id}`}
+            className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold ${
               plan.highlight
-                ? "bg-primary text-primary-foreground"
+                ? "bg-gradient-to-r from-fuchsia-500 via-rose-400 to-orange-400 text-white shadow-md"
                 : "border border-border bg-background hover:bg-muted"
             }`}
           >
-            {plan.priceThb === 0 ? "ใช้แพ็กเกจนี้" : "สมัครแพ็กเกจนี้"}
-          </button>
+            ชำระเงิน ฿{plan.priceThb.toLocaleString()}
+          </Link>
         )}
       </div>
     </div>
